@@ -1,0 +1,11 @@
+Begin Object Class=/Script/Engine.UserDefinedStruct Name="BP_SpecialRoom" ExportPath="/Script/Engine.UserDefinedStruct'/Game/Procedural/Structs/BP_SpecialRoom.BP_SpecialRoom'"
+   Begin Object Class=/Script/UnrealEd.UserDefinedStructEditorData Name="UserDefinedStructEditorData_0" ExportPath="/Script/UnrealEd.UserDefinedStructEditorData'/Game/Procedural/Structs/BP_SpecialRoom.BP_SpecialRoom:UserDefinedStructEditorData_0'"
+   End Object
+   Begin Object Name="UserDefinedStructEditorData_0" ExportPath="/Script/UnrealEd.UserDefinedStructEditorData'/Game/Procedural/Structs/BP_SpecialRoom.BP_SpecialRoom:UserDefinedStructEditorData_0'"
+      UniqueNameId=20
+      VariablesDescriptions(0)=(VarName="RoomNumber_5_73A5E3474D990E2F77C824B4B460B1FB",VarGuid=73A5E3474D990E2F77C824B4B460B1FB,FriendlyName="Room Number",DefaultValue="0",Category="int",CurrentDefaultValue="0")
+      VariablesDescriptions(1)=(VarName="RoomType_19_044E91504BE3DEA8EE64D9BA2754EBD4",VarGuid=044E91504BE3DEA8EE64D9BA2754EBD4,FriendlyName="Room Type",Category="class",SubCategoryObject="/Game/Procedural/BP_Master_Room.BP_Master_Room_C",ContainerType=Array)
+   End Object
+   EditorData="/Script/UnrealEd.UserDefinedStructEditorData'UserDefinedStructEditorData_0'"
+   Guid=EBB17F7146CFE1C2234871ABFB0A8252
+End Object
