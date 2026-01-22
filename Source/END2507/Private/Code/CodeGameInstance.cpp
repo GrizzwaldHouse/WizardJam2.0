@@ -10,7 +10,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogGameInstance, Log, All);
 void UCodeGameInstance::Init()
 {
 	UE_LOG(LogGameInstance, Log, TEXT(" GameInstance initialized"));
-	 LoadMainMenu();
+	 //LoadMainMenu();
 }
 
 void UCodeGameInstance::LoadMainMenu()

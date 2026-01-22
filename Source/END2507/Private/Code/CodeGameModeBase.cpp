@@ -17,11 +17,19 @@ DEFINE_LOG_CATEGORY_STATIC(LogCodeGameMode, Log, All);
 
 
 ACodeGameModeBase::ACodeGameModeBase()
+	: EnemyCount(0)
+	, ResultsWidgetInstance(nullptr)
+	, CurrentPlayer(nullptr)
 {
 	PrimaryActorTick.bCanEverTick = false;
-	EnemyCount = 0;
-	ResultsWidgetInstance = nullptr;
-	CurrentPlayer = nullptr;
+
+	// [2026-01-20] Fix spawn collision - always spawn player even if collision detected
+	// This prevents "SpawnActor failed because of collision" errors
+	bUseSeamlessTravel = false;
+
+	// Default pawn class - Blueprint can override this
+	// If BP_CodeBasePlayer exists, set it in BP_CodeGameMode instead
+	DefaultPawnClass = ABasePlayer::StaticClass();
 }
 
 void ACodeGameModeBase::BeginPlay()
@@ -376,4 +384,47 @@ void ACodeGameModeBase::CountAndBindAgents()
 	UE_LOG(LogTemp, Display, TEXT("Game initialized — Enemies: %d, Spawners: %d"),
 		EnemyCount, ActiveSpawners.Num());
 
+}
+
+APawn* ACodeGameModeBase::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform)
+{
+	// [2026-01-20] Fix for "SpawnActor failed because of collision at spawn location"
+	// Override default spawn behavior to always spawn, adjusting position if needed
+
+	UWorld* World = GetWorld();
+	if (!World || !NewPlayer)
+	{
+		UE_LOG(LogCodeGameMode, Error, TEXT("SpawnDefaultPawnAtTransform: Invalid World or Controller"));
+		return nullptr;
+	}
+
+	UClass* PawnClass = GetDefaultPawnClassForController(NewPlayer);
+	if (!PawnClass)
+	{
+		UE_LOG(LogCodeGameMode, Error, TEXT("SpawnDefaultPawnAtTransform: No DefaultPawnClass set!"));
+		return nullptr;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = NewPlayer;
+	SpawnParams.Instigator = GetInstigator();
+	SpawnParams.ObjectFlags |= RF_Transient;
+
+	// KEY FIX: Always spawn, adjust if collision detected
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	APawn* SpawnedPawn = World->SpawnActor<APawn>(PawnClass, SpawnTransform, SpawnParams);
+
+	if (SpawnedPawn)
+	{
+		UE_LOG(LogCodeGameMode, Log, TEXT("Player spawned successfully at %s"),
+			*SpawnTransform.GetLocation().ToString());
+	}
+	else
+	{
+		UE_LOG(LogCodeGameMode, Error, TEXT("Failed to spawn player pawn of class %s at %s"),
+			*PawnClass->GetName(), *SpawnTransform.GetLocation().ToString());
+	}
+
+	return SpawnedPawn;
 }

@@ -29,6 +29,14 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	ABaseRifle* GetEquippedRifle() const;
+
+	// Getters for faction configuration (used by controller in OnPossess)
+	UFUNCTION(BlueprintPure, Category = "Faction")
+	int32 GetPlacedFactionID() const { return PlacedAgentFactionID; }
+
+	UFUNCTION(BlueprintPure, Category = "Faction")
+	FLinearColor GetPlacedFactionColor() const { return PlacedAgentFactionColor; }
+
 	virtual void OnFactionAssigned_Implementation(int32 FactionID, const FLinearColor& FactionColor) override;
 	virtual FGenericTeamId GetGenericTeamId() const override;
 	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override;
@@ -50,6 +58,10 @@ protected:
 
 	UPROPERTY(EditInstanceOnly, Category = "Faction")
 	FLinearColor PlacedAgentFactionColor;
+
+	// Cached team ID - stored locally as backup when controller isn't ready
+	// or when controller type doesn't match expected cast
+	FGenericTeamId CachedTeamId;
 private:
 
 

@@ -14,6 +14,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "GenericTeamAgentInterface.h"
 #include "../END2507.h"
+#include "Code/Actors/AIC_CodeBaseAgentController.h"
 DEFINE_LOG_CATEGORY_STATIC(LogCodePlayer, Log, All);
 ABasePlayer::ABasePlayer()
 {

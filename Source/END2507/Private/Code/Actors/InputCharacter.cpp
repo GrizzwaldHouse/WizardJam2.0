@@ -34,25 +34,33 @@ AInputCharacter::AInputCharacter()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    // Don't rotate character with controller - camera handles rotation
-    bUseControllerRotationPitch = false;
-    bUseControllerRotationYaw = false;
-    bUseControllerRotationRoll = false;
+    // ========================================================================
+    // CAMERA SETUP - Matching BasePlayer style for shooter gameplay
+    // Character faces camera direction, not movement direction
+    // ========================================================================
 
-    // Configure character movement for third-person style
-    GetCharacterMovement()->bOrientRotationToMovement = true;
-    GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
-
-    // Create camera boom (spring arm)
+    // Create camera boom (spring arm) - positioned for over-shoulder view
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->TargetArmLength = 400.0f;
+    CameraBoom->SetRelativeLocation(FVector(0.0f, 80.0f, 90.0f));  // Offset right and up
+    CameraBoom->TargetArmLength = 300.0f;  // Closer camera like BasePlayer
     CameraBoom->bUsePawnControlRotation = true;
 
     // Create follow camera attached to boom
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
+
+    // ========================================================================
+    // MOVEMENT ROTATION - Character rotates with controller for shooter style
+    // This is the BasePlayer approach where character faces aiming direction
+    // ========================================================================
+
+    // Do NOT disable controller rotation - we want character to face aim direction
+    // bUseControllerRotationYaw = true by default on ACharacter
+
+    // Do NOT orient to movement - we want shooter-style aiming controls
+    // GetCharacterMovement()->bOrientRotationToMovement = false by default
 }
 
 // ============================================================================
@@ -258,16 +266,23 @@ void AInputCharacter::Move(const FInputActionValue& Value)
 
     if (Controller)
     {
+        // ====================================================================
+        // SHOOTER-STYLE MOVEMENT (Matching BasePlayer)
+        // Forward/Back moves in camera direction
+        // Left/Right strafes relative to camera direction
+        // ====================================================================
+
         // Get controller yaw rotation (ignore pitch and roll)
         const FRotator Rotation = Controller->GetControlRotation();
         const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-        // Calculate forward and right directions based on camera
-        const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-        const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+        // Forward movement - uses camera forward direction (like BasePlayer)
+        // MovementVector.Y = W/S input
+        AddMovementInput(YawRotation.Vector(), MovementVector.Y);
 
-        // Apply movement input
-        AddMovementInput(ForwardDirection, MovementVector.Y);
+        // Strafe movement - uses camera right direction (like BasePlayer)
+        // MovementVector.X = A/D input
+        const FVector RightDirection = FRotationMatrix(YawRotation).GetScaledAxis(EAxis::Y);
         AddMovementInput(RightDirection, MovementVector.X);
     }
 }

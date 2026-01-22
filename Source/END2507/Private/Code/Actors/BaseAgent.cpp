@@ -22,10 +22,10 @@ ABaseAgent::ABaseAgent()
 	MaterialParameterName = TEXT("Tint");
 	PlacedAgentFactionID = 1;  // Enemy team
 	PlacedAgentFactionColor = FLinearColor::Red;
+	// Initialize cached team ID from placed faction (will be updated in OnFactionAssigned)
+	CachedTeamId = FGenericTeamId(static_cast<uint8>(PlacedAgentFactionID));
 	//Configure AI possession
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-	
-
 }
 
 void ABaseAgent::EnemyAttack(AActor* Target)
@@ -90,6 +90,7 @@ void ABaseAgent::SetAgentColor(const FLinearColor& NewColor)
 	UE_LOG(LogCodeAgent, Log, TEXT("[%s] SetAgentColor: Updated %d material slots to (%.2f, %.2f, %.2f)"),
 		*GetName(), DynamicMaterials.Num(), NewColor.R, NewColor.G, NewColor.B);
 }
+
 void ABaseAgent::UpdateBlackboardHealth(float HealthRatio)
 {
 	AAIController* AIController = Cast<AAIController>(GetController());
@@ -110,9 +111,8 @@ void ABaseAgent::UpdateBlackboardHealth(float HealthRatio)
 	BlackboardComp->SetValueAsFloat(FName("HealthRatio"), HealthRatio);
 
 	UE_LOG(LogCodeAgent, Log, TEXT("%s: Blackboard Health=%.1f"), *GetName(), HealthRatio * 100.f);
-
-
 }
+
 void ABaseAgent::SetupAgentAppearance()
 {
 	USkeletalMeshComponent* MeshComp = GetMesh();
@@ -185,46 +185,64 @@ void ABaseAgent::OnFactionAssigned_Implementation(int32 FactionID, const FLinear
 	UE_LOG(LogTemp, Display, TEXT("[%s] Faction assigned: ID=%d, Color=%s"),
 		*GetName(), FactionID, *FactionColor.ToString());
 
+	// Store team locally - this is the authoritative source for GetGenericTeamId()
+	// Works regardless of controller type (CodeBaseAgentController, QuidditchController, etc.)
+	CachedTeamId = FGenericTeamId(static_cast<uint8>(FactionID));
+
 	// Update visual appearance
 	SetAgentColor(FactionColor);
 
-	// Update controller's team ID and Blackboard
-	AAIC_CodeBaseAgentController* AgentController = Cast<AAIC_CodeBaseAgentController>(GetController());
-	if (AgentController)
+	// Update controller's team ID using IGenericTeamAgentInterface
+	// This works with ANY controller that implements the interface
+	AController* MyController = GetController();
+	if (MyController)
 	{
-		// Set team via interface method
-		FGenericTeamId NewTeamID = FGenericTeamId(static_cast<uint8>(FactionID));
-		AgentController->SetGenericTeamId(NewTeamID);
+		IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(MyController);
+		if (TeamAgent)
+		{
+			TeamAgent->SetGenericTeamId(CachedTeamId);
+			UE_LOG(LogTemp, Display, TEXT("[%s] Set controller team ID to %d via interface"),
+				*GetName(), CachedTeamId.GetId());
+		}
 
-		// Update Blackboard with faction data for BehaviorTree
-		AgentController->UpdateFactionFromPawn(FactionID, FactionColor);
-
-		UE_LOG(LogTemp, Display, TEXT("[%s] Notified controller of faction change"), *GetName());
+		// Try to update blackboard if controller supports it (CodeBaseAgentController only)
+		AAIC_CodeBaseAgentController* CodeAgentController = Cast<AAIC_CodeBaseAgentController>(MyController);
+		if (CodeAgentController)
+		{
+			CodeAgentController->UpdateFactionFromPawn(FactionID, FactionColor);
+		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[%s] No valid AgentController to notify"), *GetName());
+		UE_LOG(LogTemp, Warning, TEXT("[%s] No controller yet - team cached locally (ID=%d)"),
+			*GetName(), CachedTeamId.GetId());
 	}
 }
 
 FGenericTeamId ABaseAgent::GetGenericTeamId() const
-{	// Delegate to controller
-	AAIC_CodeBaseAgentController* AgentController = Cast<AAIC_CodeBaseAgentController>(GetController());
-	if (AgentController)
-	{
-		return AgentController->GetGenericTeamId();
-	}
-	return FGenericTeamId::NoTeam;
+{
+	// Return cached team ID - this is set by OnFactionAssigned_Implementation
+	// Works regardless of controller type (CodeBaseAgentController, QuidditchController, etc.)
+	return CachedTeamId;
 }
 void ABaseAgent::SetGenericTeamId(const FGenericTeamId& NewTeamID)
 {
-	AAIC_CodeBaseAgentController* AgentController = Cast<AAIC_CodeBaseAgentController>(GetController());
-	if (AgentController)
+	// Store locally - this is the authoritative source
+	CachedTeamId = NewTeamID;
+
+	// Also update controller if available (using interface cast for any controller type)
+	AController* MyController = GetController();
+	if (MyController)
 	{
-		AgentController->SetGenericTeamId(NewTeamID);
-		UE_LOG(LogTemp, Display, TEXT("[%s] Set team ID to %d via controller"),
-			*GetName(), NewTeamID.GetId());
+		IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(MyController);
+		if (TeamAgent)
+		{
+			TeamAgent->SetGenericTeamId(NewTeamID);
+		}
 	}
+
+	UE_LOG(LogTemp, Display, TEXT("[%s] Set team ID to %d (cached locally)"),
+		*GetName(), NewTeamID.GetId());
 }
 bool ABaseAgent::CanPickAmmo() const
 {
@@ -233,17 +251,16 @@ bool ABaseAgent::CanPickAmmo() const
 void ABaseAgent::BeginPlay()
 {
 	Super::BeginPlay();
-	if (GetOwner() == nullptr)  // No owner = placed in level
-	{
-		UE_LOG(LogCodeAgent, Log, TEXT("[%s] Placed agent — applying faction %d"),
-			*GetName(), PlacedAgentFactionID);
 
-		OnFactionAssigned_Implementation(PlacedAgentFactionID, PlacedAgentFactionColor);
-	}
-	else
-	{
-		UE_LOG(LogCodeAgent, Log, TEXT("[%s] Spawned agent — faction set by spawner"), *GetName());
-	}
+	// ========================================================================
+	// NOTE: Faction assignment now happens in controller's OnPossess()
+	// This is because GetController() returns nullptr during BeginPlay.
+	// See AIC_CodeBaseAgentController::OnPossess() for faction initialization.
+	// ========================================================================
+
+	UE_LOG(LogCodeAgent, Log, TEXT("[%s] BeginPlay - Faction will be assigned in OnPossess (ID=%d, Color=%s)"),
+		*GetName(), PlacedAgentFactionID, *PlacedAgentFactionColor.ToString());
+
 	if (!EquippedRifle)
 	{
 		UE_LOG(LogCodeAgent, Error, TEXT("%s: NO RIFLE EQUIPPED AFTER SPAWN!"), *GetName());

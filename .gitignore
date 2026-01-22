@@ -117,3 +117,9 @@ CrashReportClient/
 # -----------------------------------------------------------------------------
 Plugins/**/Binaries/
 Plugins/**/Intermediate/
+
+# -----------------------------------------------------------------------------
+# CLAUDE CODE DOCUMENTATION - AI reference materials
+# Large external project files for AI agent development reference
+# -----------------------------------------------------------------------------
+Artificial-Intelligence/

@@ -22,6 +22,10 @@ public:
 
 	virtual void BeginPlay() override;
 
+	// [2026-01-20] Override to fix spawn collision issues
+	// Forces spawn even when collision is detected at PlayerStart
+	virtual APawn* SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform) override;
+
 	// Counts remaining enemies and checks win condition
 	UFUNCTION(BlueprintCallable, Category = "Game Rules")
 	void CheckWinCondition();
