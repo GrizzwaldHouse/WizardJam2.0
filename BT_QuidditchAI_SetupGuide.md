@@ -14,7 +14,8 @@
 3. [Blackboard Setup (BB_QuidditchAI)](#3-blackboard-setup-bb_quidditchai)
 4. [AI Controller Setup](#4-ai-controller-setup)
 5. [Node-by-Node Configuration](#5-node-by-node-configuration)
-6. [Testing Checklist](#6-testing-checklist)
+6. [New Custom Tasks](#6-new-custom-tasks)
+7. [Testing Checklist](#7-testing-checklist)
 
 ---
 
@@ -36,22 +37,26 @@ START
 └─────────────────────────────┘
       │ NO                │ YES
       ▼                   ▼
-┌─────────────┐    ┌─────────────┐
-│ Acquisition │    │   Flight    │
-│    Path     │    │    Path     │
-└─────────────┘    └─────────────┘
-      │                   │
-      ▼                   ▼
- Find Collectible    Mount Broom
-      │              (if not flying)
-      ▼                   │
- Walk to Collectible      ▼
-      │              Control Flight
-      ▼              (fly to target)
- Pickup (auto)            │
-      │                   ▼
-      ▼                  END
- Loop back to check
+┌─────────────┐    ┌─────────────────────┐
+│ Acquisition │    │   Flight Path       │
+│    Path     │    └─────────────────────┘
+└─────────────┘              │
+      │                      ▼
+      ▼               ┌─────────────┐
+ Find Collectible     │ Is Flying?  │
+      │               └─────────────┘
+      ▼                 │ NO    │ YES
+ Walk to Collectible    ▼       ▼
+      │            Find Broom   Control Flight
+      ▼                 │       (fly to target)
+ Pickup (auto)          ▼            │
+      │            Walk to Broom     ▼
+      ▼                 │           END
+ Loop back             ▼
+                  Interact (Mount)
+                       │
+                       ▼
+                  Control Flight
 ```
 
 ---
@@ -73,9 +78,26 @@ BT_QuidditchAI
         │       │
         │       └── [Sequence] FlightPath
         │           │
-        │           ├── [Decorator] Blackboard: IsFlying == false
+        │           ├── [Selector] MountOrFly
         │           │   │
-        │           │   └── [Task] Mount/Dismount Broom
+        │           │   ├── [Decorator] Blackboard: IsFlying == true
+        │           │   │   │
+        │           │   │   └── [Task] Control Flight
+        │           │   │             Target: TargetLocation
+        │           │   │
+        │           │   └── [Sequence] FindAndMountBroom
+        │           │       │
+        │           │       ├── [Service] Find Collectible
+        │           │       │             Class: BP_BroomActor (NOT collectible!)
+        │           │       │             Output: PerceivedCollectible
+        │           │       │
+        │           │       ├── [Task] Move To
+        │           │       │           Target: PerceivedCollectible
+        │           │       │
+        │           │       └── [Task] Interact With Target  ← NEW TASK
+        │           │                   Target: PerceivedCollectible
+        │           │                   Range: 200
+        │           │                   Success Key: IsFlying
         │           │
         │           └── [Task] Control Flight
         │                     Target: TargetLocation
@@ -95,6 +117,40 @@ BT_QuidditchAI
                     ├── [Task] Move To
                     │           Target: PerceivedCollectible
                     │
+                    └── [Task] Wait (0.5s)
+```
+
+### Alternative Simplified Structure (Using Existing Mount Task)
+
+If you prefer using the existing `BTTask_MountBroom`:
+
+```
+BT_QuidditchAI
+│
+└── ROOT (BB_QuidditchAI)
+    │
+    └── [Selector] Mount Broom
+        │
+        ├── LEFT BRANCH: Has Broom Channel
+        │   │
+        │   └── [Decorator] Has Channel: Broom
+        │       │
+        │       └── [Sequence] FlightPath
+        │           │
+        │           ├── [Decorator] Blackboard: IsFlying == false
+        │           │   │
+        │           │   └── [Task] Mount/Dismount Broom
+        │           │
+        │           └── [Task] Control Flight
+        │
+        └── RIGHT BRANCH: Missing Broom Channel
+            │
+            └── [Decorator] Has Channel: Broom (Inverted)
+                │
+                └── [Sequence] AcquisitionPath
+                    │
+                    ├── [Service] Find Collectible
+                    ├── [Task] Move To
                     └── [Task] Wait (0.5s)
 ```
 
@@ -351,7 +407,187 @@ Open the Blueprint and set these in the **Class Defaults**:
 
 ---
 
-## 6. Testing Checklist
+## 6. New Custom Tasks
+
+These are the NEW behavior tree tasks created for the Quidditch AI system. Add them to your behavior tree from **New Task** dropdown.
+
+---
+
+### 6.1 BTTask_Interact (Interact With Target)
+
+**Purpose:** Modular task that allows AI to interact with ANY actor implementing IInteractable interface. Use this to mount brooms, open doors, activate switches, etc.
+
+**Display Name in BT Editor:** `Interact With Target`
+
+**How to Add:**
+1. In Behavior Tree editor, click **New Task**
+2. Search for **Interact With Target**
+3. Drag into your behavior tree
+
+**Details Panel Configuration:**
+
+| Property | Type | Value | Description |
+|----------|------|-------|-------------|
+| **Target Key** | Blackboard Key | `PerceivedCollectible` | Actor to interact with |
+| **Interaction Range** | Float | `200` | Max distance to initiate interaction |
+| **Required Channel** | FName | `Broom` or `None` | Channel AI must have (leave empty for no requirement) |
+| **Clear Target On Success** | Bool | `true` | Remove target from blackboard after success |
+| **Success State Key** | Blackboard Key | `IsFlying` | Key to set TRUE on success (optional) |
+
+**Behavior:**
+1. Checks if AI has required channel (if specified)
+2. Moves toward target if not in range
+3. Calls `IInteractable::CanInteract()` on target
+4. If true, calls `IInteractable::OnInteract()` with AI as interactor
+5. On success: optionally clears target and sets success key
+
+**Example Use Cases:**
+- Mount broom: Target = BroomActor, RequiredChannel = "Broom", SuccessKey = "IsFlying"
+- Open door: Target = DoorActor, RequiredChannel = "None"
+- Activate switch: Target = SwitchActor
+
+**Details Panel Visual:**
+```
+┌─────────────────────────────────────────────┐
+│ Interact With Target                        │
+├─────────────────────────────────────────────┤
+│ Interaction                                 │
+│   Target Key: PerceivedCollectible     [▼] │
+│   Interaction Range: 200                    │
+│   Required Channel: Broom                   │
+│   Clear Target On Success: ☑               │
+│   Success State Key: IsFlying          [▼] │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+### 6.2 BTTask_ForceMount (DEBUG)
+
+**Purpose:** Debug/testing utility that bypasses normal broom acquisition. Spawns a broom at AI location and mounts immediately. **USE FOR TESTING ONLY.**
+
+**Display Name in BT Editor:** `Force Mount (DEBUG)`
+
+**How to Add:**
+1. In Behavior Tree editor, click **New Task**
+2. Search for **Force Mount**
+3. Add as FIRST task in tree (before any other logic)
+
+**Details Panel Configuration:**
+
+| Property | Type | Value | Description |
+|----------|------|-------|-------------|
+| **Broom Class** | TSubclassOf<ABroomActor> | `BP_BroomActor` | Blueprint class to spawn |
+| **Spawn Offset** | FVector | `(0, 0, 50)` | Offset from AI location |
+
+**Behavior:**
+1. Checks if AI already has broom component and is flying → Success
+2. Spawns broom from BroomClass at AI location + offset
+3. Calls `IInteractable::OnInteract()` on spawned broom
+4. Verifies AI is now flying
+5. Sets `IsFlying = true` in blackboard
+
+**When to Use:**
+- Testing BTTask_ControlFlight in isolation
+- Verifying flight mechanics work before full BT is configured
+- Quick iteration on flight destination/behavior
+
+**When to Remove:**
+- Before final testing
+- Before shipping/demo
+- Once full BT flow is verified
+
+**Details Panel Visual:**
+```
+┌─────────────────────────────────────────────┐
+│ Force Mount (DEBUG)                         │
+├─────────────────────────────────────────────┤
+│ Debug                                       │
+│   Broom Class: BP_BroomActor           [▼] │
+│   Spawn Offset: X=0 Y=0 Z=50               │
+└─────────────────────────────────────────────┘
+```
+
+**Quick Test Setup:**
+```
+BT_QuidditchAI (TESTING MODE)
+│
+└── ROOT
+    │
+    └── [Sequence] QuickFlightTest
+        │
+        ├── [Task] Force Mount (DEBUG)   ← Add this first!
+        │           Broom Class: BP_BroomActor
+        │
+        └── [Task] Control Flight
+                    Target: TargetLocation
+```
+
+---
+
+### 6.3 Complete Flow with New Tasks
+
+Here's how to wire up the complete AI flow using BTTask_Interact:
+
+```
+BT_QuidditchAI (COMPLETE VERSION)
+│
+└── ROOT (BB_QuidditchAI)
+    │
+    └── [Selector] Main
+        │
+        │ ┌──────────────────────────────────────────────────────┐
+        │ │ PHASE 3: Already Flying - Navigate to Target         │
+        │ └──────────────────────────────────────────────────────┘
+        ├── [Decorator] Blackboard: IsFlying == true
+        │   │
+        │   └── [Task] Control Flight
+        │             Target Key: TargetLocation
+        │
+        │ ┌──────────────────────────────────────────────────────┐
+        │ │ PHASE 2: Has Channel - Find & Mount Broom            │
+        │ └──────────────────────────────────────────────────────┘
+        ├── [Decorator] Has Channel: Broom
+        │   │
+        │   └── [Sequence] MountBroomSequence
+        │       │
+        │       ├── [Service] Find Collectible
+        │       │             Class: BP_BroomActor
+        │       │             Output: PerceivedCollectible
+        │       │
+        │       ├── [Task] Move To
+        │       │           Target: PerceivedCollectible
+        │       │
+        │       └── [Task] Interact With Target  ← NEW
+        │                   Target: PerceivedCollectible
+        │                   Range: 200
+        │                   Required Channel: (None)
+        │                   Success Key: IsFlying
+        │
+        │ ┌──────────────────────────────────────────────────────┐
+        │ │ PHASE 1: No Channel - Acquire Broom Collectible      │
+        │ └──────────────────────────────────────────────────────┘
+        └── [Sequence] AcquisitionPath
+            │
+            ├── [Service] Find Collectible
+            │             Class: BP_BroomCollectible_C
+            │             Output: PerceivedCollectible
+            │
+            ├── [Task] Move To
+            │           Target: PerceivedCollectible
+            │
+            └── [Task] Wait (0.5s)
+```
+
+**Execution Flow:**
+1. **Check Phase 3:** If `IsFlying == true` → Control Flight (already mounted)
+2. **Check Phase 2:** If `Has Broom Channel` → Find BroomActor → Walk → Interact → Mount
+3. **Fallback Phase 1:** Find BroomCollectible → Walk → Pickup (grants channel)
+4. **Loop:** After pickup, re-evaluates → Now has channel → Phase 2 runs
+
+---
+
+## 7. Testing Checklist
 
 ### Level Setup
 
@@ -403,18 +639,36 @@ In Unreal Editor during Play:
 
 ### C++ Source Files
 
-| File | Path |
-|------|------|
-| BTTask_ControlFlight.h | `Source/END2507/Public/Code/AI/` |
-| BTTask_ControlFlight.cpp | `Source/END2507/Private/Code/AI/` |
-| BTTask_MountBroom.h | `Source/END2507/Public/Code/AI/` |
-| BTTask_MountBroom.cpp | `Source/END2507/Private/Code/AI/` |
-| BTService_FindCollectible.h | `Source/END2507/Public/Code/AI/` |
-| BTService_FindCollectible.cpp | `Source/END2507/Private/Code/AI/` |
-| BTDecorator_HasChannel.h | `Source/END2507/Public/Code/AI/` |
-| BTDecorator_HasChannel.cpp | `Source/END2507/Private/Code/AI/` |
-| AIC_QuidditchController.h | `Source/END2507/Public/Code/AI/` |
-| AIC_QuidditchController.cpp | `Source/END2507/Private/Code/AI/` |
+| File | Path | Description |
+|------|------|-------------|
+| BTTask_ControlFlight.h/.cpp | `Code/AI/` | 3D flight navigation task |
+| BTTask_MountBroom.h/.cpp | `Code/AI/` | Original mount broom task |
+| **BTTask_Interact.h/.cpp** | `Code/AI/` | **NEW** - Modular IInteractable interaction |
+| **BTTask_ForceMount.h/.cpp** | `Code/AI/` | **NEW** - Debug spawn & mount utility |
+| BTService_FindCollectible.h/.cpp | `Code/AI/` | Perception-based collectible finder |
+| BTDecorator_HasChannel.h/.cpp | `Code/AI/` | Channel gate decorator |
+| AIC_QuidditchController.h/.cpp | `Code/AI/` | AI Controller with perception |
+
+**Full Paths:**
+```
+Source/END2507/Public/Code/AI/
+├── BTTask_ControlFlight.h
+├── BTTask_Interact.h         ← NEW
+├── BTTask_ForceMount.h       ← NEW
+├── BTTask_MountBroom.h
+├── BTService_FindCollectible.h
+├── BTDecorator_HasChannel.h
+└── AIC_QuidditchController.h
+
+Source/END2507/Private/Code/AI/
+├── BTTask_ControlFlight.cpp
+├── BTTask_Interact.cpp       ← NEW
+├── BTTask_ForceMount.cpp     ← NEW
+├── BTTask_MountBroom.cpp
+├── BTService_FindCollectible.cpp
+├── BTDecorator_HasChannel.cpp
+└── AIC_QuidditchController.cpp
+```
 
 ### Blueprint Assets
 
