@@ -691,3 +691,59 @@ void UAC_BroomComponent::OnStaminaChanged(AActor* Owner, float NewStamina, float
         ForceDismount();
     }
 }
+
+// ============================================================================
+// CORE API - Used by both Player Input and AI
+// ============================================================================
+
+void UAC_BroomComponent::SetVerticalInput(float InputValue)
+{
+    if (!bIsFlying)
+    {
+        return;
+    }
+
+    // Clamp input to valid range
+    InputValue = FMath::Clamp(InputValue, -1.0f, 1.0f);
+
+    // Convert input to velocity
+    CurrentVerticalVelocity = InputValue * VerticalSpeed;
+}
+
+void UAC_BroomComponent::SetBoostEnabled(bool bEnabled)
+{
+    if (!bIsFlying)
+    {
+        return;
+    }
+
+    // Only process if state actually changed
+    if (bIsBoosting == bEnabled)
+    {
+        return;
+    }
+
+    bIsBoosting = bEnabled;
+    OnBoostStateChanged.Broadcast(bIsBoosting);
+
+    if (MovementComponent)
+    {
+        MovementComponent->MaxFlySpeed = bIsBoosting ? BoostSpeed : FlySpeed;
+
+        UE_LOG(LogBroomComponent, Log,
+            TEXT("[%s] Boost %s | Speed: %.0f"),
+            *GetOwner()->GetName(),
+            bIsBoosting ? TEXT("ON") : TEXT("OFF"),
+            MovementComponent->MaxFlySpeed);
+    }
+
+    // Update stamina bar color
+    if (bIsBoosting)
+    {
+        OnStaminaVisualUpdate.Broadcast(FLinearColor(1.0f, 0.5f, 0.0f)); // Orange
+    }
+    else
+    {
+        OnStaminaVisualUpdate.Broadcast(FLinearColor(0.0f, 1.0f, 1.0f)); // Cyan
+    }
+}

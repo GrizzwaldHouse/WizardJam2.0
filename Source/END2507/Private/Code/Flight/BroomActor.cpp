@@ -16,6 +16,8 @@
 #include "Code/Utilities/AC_SpellCollectionComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/Character.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "Perception/AISense_Sight.h"
 
 DEFINE_LOG_CATEGORY(LogBroomActor)
 
@@ -30,6 +32,7 @@ ABroomActor::ABroomActor()
     , InUseText(FText::FromString(TEXT("Broom in use")))
     , CurrentRider(nullptr)
     , RiderBroomComponent(nullptr)
+    , bAutoRegisterForSight(true)
 {
     PrimaryActorTick.bCanEverTick = false;
 
@@ -41,6 +44,9 @@ ABroomActor::ABroomActor()
     BroomMesh->SetGenerateOverlapEvents(true);
     BroomMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
     BroomMesh->SetCollisionResponseToAllChannels(ECR_Overlap);
+
+    // Create perception component so AI can detect this broom
+    PerceptionSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionSource"));
 }
 
 // ============================================================================
@@ -51,11 +57,23 @@ void ABroomActor::BeginPlay()
 {
     Super::BeginPlay();
 
+    // Configure perception source for AI visibility
+    if (PerceptionSource && bAutoRegisterForSight)
+    {
+        PerceptionSource->bAutoRegister = true;
+        PerceptionSource->RegisterForSense(UAISense_Sight::StaticClass());
+
+        UE_LOG(LogBroomActor, Log,
+            TEXT("[%s] Registered for AI Sight perception"),
+            *GetName());
+    }
+
     UE_LOG(LogBroomActor, Display,
-        TEXT("[BroomActor] %s initialized | DisplayName: %s | RequiredChannel: %s"),
+        TEXT("[BroomActor] %s initialized | DisplayName: %s | RequiredChannel: %s | AI Visible: %s"),
         *GetName(),
         *BroomConfiguration.BroomDisplayName.ToString(),
-        (BroomConfiguration.RequiredChannel.IsNone() ? TEXT("None") : *BroomConfiguration.RequiredChannel.ToString()));
+        (BroomConfiguration.RequiredChannel.IsNone() ? TEXT("None") : *BroomConfiguration.RequiredChannel.ToString()),
+        bAutoRegisterForSight ? TEXT("YES") : TEXT("NO"));
 }
 
 // ============================================================================

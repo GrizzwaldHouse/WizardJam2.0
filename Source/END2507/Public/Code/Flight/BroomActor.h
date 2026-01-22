@@ -52,6 +52,7 @@
 // Forward declarations
 class UStaticMeshComponent;
 class UAC_BroomComponent;
+class UAIPerceptionStimuliSourceComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBroomActor, Log, All);
 
@@ -148,6 +149,10 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     UStaticMeshComponent* BroomMesh;
 
+    // AI Perception component so AI agents can detect this broom
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UAIPerceptionStimuliSourceComponent* PerceptionSource;
+
     // ========================================================================
     // DESIGNER CONFIGURATION
     // This is THE configuration struct - all broom behavior is defined here
@@ -159,6 +164,14 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Broom Configuration",
         meta = (ShowOnlyInnerProperties))
     FBroomConfiguration BroomConfiguration;
+
+    // ========================================================================
+    // AI PERCEPTION SETTINGS
+    // ========================================================================
+
+    // Whether to automatically register for AI sight perception
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Broom|AI")
+    bool bAutoRegisterForSight;
 
     // ========================================================================
     // INTERACTION SETTINGS

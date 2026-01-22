@@ -67,6 +67,23 @@ public:
     UFUNCTION(BlueprintPure, Category = "Broom")
     float GetFlightStaminaPercent() const;
 
+    // ========================================================================
+    // CORE API - Used by both Player Input and AI
+    // These are the "verbs" that control flight behavior
+    // ========================================================================
+
+    // Set vertical input for ascend/descend (-1.0 = full descend, +1.0 = full ascend)
+    // Player: Called from HandleAscendInput/HandleDescendInput
+    // AI: Called from BTTask_ControlFlight
+    UFUNCTION(BlueprintCallable, Category = "Broom|Core API")
+    void SetVerticalInput(float InputValue);
+
+    // Enable or disable boost
+    // Player: Called from HandleBoostInput
+    // AI: Called from BTTask_ControlFlight
+    UFUNCTION(BlueprintCallable, Category = "Broom|Core API")
+    void SetBoostEnabled(bool bEnabled);
+
     // Apply configuration from a BroomActor when mounting
     UFUNCTION(BlueprintCallable, Category = "Broom")
     void ApplyConfiguration(const FBroomConfiguration& NewConfig);
