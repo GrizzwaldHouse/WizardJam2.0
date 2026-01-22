@@ -61,6 +61,10 @@ public:
     // Description shown in Behavior Tree editor
     virtual FString GetStaticDescription() const override;
 
+    // CRITICAL: Resolves blackboard key at runtime
+    // Without this, FBlackboardKeySelector won't work correctly in BT editor
+    virtual void InitializeFromAsset(UBehaviorTree& Asset) override;
+
 protected:
     // ========================================================================
     // BLACKBOARD CONFIGURATION

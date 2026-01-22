@@ -22,6 +22,7 @@
 #include "Code/AI/BTTask_ControlFlight.h"
 #include "Code/Flight/AC_BroomComponent.h"
 #include "AIController.h"
+#include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Object.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
@@ -41,9 +42,16 @@ UBTTask_ControlFlight::UBTTask_ControlFlight()
     , bDirectFlight(true)
 {
     NodeName = "Control Flight";
-    
+
     // This task ticks every frame while active
     bNotifyTick = true;
+
+    // Key filters allow both Object (Actor) and Vector types in BT editor dropdown
+    TargetKey.AddObjectFilter(this,
+        GET_MEMBER_NAME_CHECKED(UBTTask_ControlFlight, TargetKey),
+        AActor::StaticClass());
+    TargetKey.AddVectorFilter(this,
+        GET_MEMBER_NAME_CHECKED(UBTTask_ControlFlight, TargetKey));
 }
 
 // ============================================================================
@@ -275,4 +283,20 @@ FString UBTTask_ControlFlight::GetStaticDescription() const
     }
 
     return Description;
+}
+
+// ============================================================================
+// INITIALIZE FROM ASSET (CRITICAL for Blackboard key resolution)
+// ============================================================================
+
+void UBTTask_ControlFlight::InitializeFromAsset(UBehaviorTree& Asset)
+{
+    Super::InitializeFromAsset(Asset);
+
+    // Resolve blackboard key against the behavior tree's blackboard asset
+    // Without this, TargetKey.SelectedKeyType and SelectedKeyName won't be set
+    if (UBlackboardData* BBAsset = GetBlackboardAsset())
+    {
+        TargetKey.ResolveSelectedKey(*BBAsset);
+    }
 }
