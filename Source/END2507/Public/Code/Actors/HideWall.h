@@ -149,7 +149,7 @@ private:
 	void StoreOriginalColors();
 	void FlashHitColor();
 	void RevertToOriginalColor();
-	virtual void TakeDamage(float DamageAmount) ;
+	void ApplyInternalDamage(float DamageAmount);
 	void DestroyWall();
 	void TrySpawnAgentThroughDoor();
 

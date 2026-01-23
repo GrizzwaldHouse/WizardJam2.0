@@ -158,14 +158,23 @@ void AProductivitySkyActor::InitializeCelestialBodies()
 
 void AProductivitySkyActor::SubscribeToSubsystems()
 {
-	if (GEditor)
+	// Only subscribe to editor subsystems when running in editor (not PIE)
+	// In PIE/runtime, RuntimeSkyController drives this actor directly
+#if WITH_EDITOR
+	if (GEditor && !GetWorld()->IsPlayInEditor())
 	{
 		UTimeOfDaySubsystem* TimeSubsystem = GEditor->GetEditorSubsystem<UTimeOfDaySubsystem>();
 		if (TimeSubsystem)
 		{
 			TimeSubsystem->OnTimeOfDayChanged.AddDynamic(this, &AProductivitySkyActor::HandleTimeOfDayChanged);
+			UE_LOG(LogProductivitySky, Log, TEXT("ProductivitySkyActor subscribed to editor TimeOfDaySubsystem"));
 		}
 	}
+	else
+	{
+		UE_LOG(LogProductivitySky, Log, TEXT("ProductivitySkyActor running in PIE - use RuntimeSkyController to drive visuals"));
+	}
+#endif
 }
 
 void AProductivitySkyActor::UpdateSkyColors(float TimeOfDay)

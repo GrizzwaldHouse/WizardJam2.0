@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(del \"Source\\\\END2507\\\\Public\\\\Code\\\\Actors\\\\RuntimeSkyController.h\")",
+      "Bash(del \"Source\\\\END2507\\\\Private\\\\Code\\\\Actors\\\\RuntimeSkyController.cpp\")",
+      "Bash(findstr:*)",
+      "Bash(dir:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)"
+    ]
+  }
+}

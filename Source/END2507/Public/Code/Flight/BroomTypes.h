@@ -251,7 +251,7 @@ struct  END2507_API FBroomConfiguration
         Config.IdleStaminaRegenRate = 12.0f;
         Config.FlySpeed = 800.0f;
         Config.BoostSpeed = 1500.0f;
-        Config.RequiredChannel = FName(TEXT("QuidditchBroom"));
+        Config.RequiredChannel = FName(TEXT("Broom"));
         return Config;
     }
 

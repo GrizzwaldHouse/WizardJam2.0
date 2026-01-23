@@ -55,6 +55,10 @@ struct DEVELOPERPRODUCTIVITYTRACKER_API FBreakDetectionSignals
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Signals")
 	bool bEditorLostFocus;
 
+	// MCP server has active client connections (indicates active AI-assisted development)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Signals")
+	bool bMCPConnectionActive;
+
 	FBreakDetectionSignals()
 		: bScreenLocked(false)
 		, bNoInputDetected(false)
@@ -63,6 +67,7 @@ struct DEVELOPERPRODUCTIVITYTRACKER_API FBreakDetectionSignals
 		, bKeyboardIdle(false)
 		, SecondsSinceLastInput(0.0f)
 		, bEditorLostFocus(false)
+		, bMCPConnectionActive(false)
 	{
 	}
 
@@ -83,6 +88,12 @@ struct DEVELOPERPRODUCTIVITYTRACKER_API FBreakDetectionSignals
 		// Both mouse and keyboard idle
 		Confidence += (bMouseIdle && bKeyboardIdle) ? 0.1f : 0.0f;
 
+		// MCP activity REDUCES break confidence (indicates active AI-assisted development)
+		if (bMCPConnectionActive)
+		{
+			Confidence -= 0.15f;
+		}
+
 		return FMath::Clamp(Confidence, 0.0f, 1.0f);
 	}
 
@@ -96,6 +107,7 @@ struct DEVELOPERPRODUCTIVITYTRACKER_API FBreakDetectionSignals
 		if (bNoProductiveAppFocused) ActiveSignals.Add(TEXT("No Productive App"));
 		if (bMouseIdle && bKeyboardIdle) ActiveSignals.Add(TEXT("Input Devices Idle"));
 		if (bEditorLostFocus) ActiveSignals.Add(TEXT("Editor Not Focused"));
+		if (bMCPConnectionActive) ActiveSignals.Add(TEXT("MCP Active (-0.15)"));
 
 		return FString::Join(ActiveSignals, TEXT(", "));
 	}
@@ -204,6 +216,11 @@ public:
 		meta = (ClampMin = "30.0", ClampMax = "300.0"))
 	float InactivityThresholdSeconds;
 
+	// Cooldown period after break ends before new break can be detected
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Break|Config",
+		meta = (ClampMin = "30.0", ClampMax = "600.0"))
+	float BreakCooldownSeconds;
+
 	// ========================================================================
 	// DELEGATES
 	// ========================================================================
@@ -239,5 +256,6 @@ private:
 	void StartBreak(float Confidence);
 	void EndBreak();
 	bool CheckScreenLockState();
+	bool CheckMCPConnectionState();
 	float GetSecondsSinceLastInput() const;
 };

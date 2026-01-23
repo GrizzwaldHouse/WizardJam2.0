@@ -47,6 +47,7 @@ TArray<FKnownApplication> FKnownApplicationsFactory::GetDefaultApplications()
 	AllApps.Append(CreateCommunicationApplications());
 	AllApps.Append(CreateProjectManagementApplications());
 	AllApps.Append(CreateTerminalApplications());
+	AllApps.Append(CreateGameEngineApplications());
 
 	return AllApps;
 }
@@ -91,6 +92,8 @@ FString FKnownApplicationsFactory::GetCategoryDisplayName(EExternalAppCategory C
 		return TEXT("Web Browser");
 	case EExternalAppCategory::Terminal:
 		return TEXT("Terminal");
+	case EExternalAppCategory::GameEngine:
+		return TEXT("Game Engines");
 	default:
 		return TEXT("Unknown");
 	}
@@ -509,6 +512,48 @@ TArray<FKnownApplication> FKnownApplicationsFactory::CreateTerminalApplications(
 		EExternalAppCategory::Terminal,
 		true,
 		0.95f
+	));
+
+	return Apps;
+}
+
+TArray<FKnownApplication> FKnownApplicationsFactory::CreateGameEngineApplications()
+{
+	TArray<FKnownApplication> Apps;
+
+	// Unreal Engine - all common executable variants
+	Apps.Add(FKnownApplication(
+		TEXT("Unreal Engine"),
+		{
+			TEXT("UnrealEditor.exe"),
+			TEXT("UnrealEditor-Win64-Debug.exe"),
+			TEXT("UnrealEditor-Win64-DebugGame.exe"),
+			TEXT("UnrealEditor-Win64-Development.exe"),
+			TEXT("UnrealEditor-Cmd.exe"),
+			TEXT("UE4Editor.exe"),
+			TEXT("UE4Editor-Cmd.exe")
+		},
+		EExternalAppCategory::GameEngine,
+		true,
+		1.0f
+	));
+
+	// Unity Editor
+	Apps.Add(FKnownApplication(
+		TEXT("Unity Editor"),
+		{ TEXT("Unity.exe"), TEXT("Unity Hub.exe") },
+		EExternalAppCategory::GameEngine,
+		true,
+		1.0f
+	));
+
+	// Godot Engine
+	Apps.Add(FKnownApplication(
+		TEXT("Godot Engine"),
+		{ TEXT("Godot.exe"), TEXT("Godot_v4.exe"), TEXT("Godot_v4.2.exe") },
+		EExternalAppCategory::GameEngine,
+		true,
+		1.0f
 	));
 
 	return Apps;

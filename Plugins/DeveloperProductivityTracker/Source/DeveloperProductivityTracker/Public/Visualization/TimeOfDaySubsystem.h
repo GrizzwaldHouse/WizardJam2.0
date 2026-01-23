@@ -18,10 +18,10 @@
 #include "CoreMinimal.h"
 #include "EditorSubsystem.h"
 #include "Tickable.h"
+#include "Wellness/BreakWellnessSubsystem.h"
 #include "TimeOfDaySubsystem.generated.h"
 
 class UProductivitySkyConfig;
-enum class EWellnessStatus : uint8;
 
 // Delegate for time of day changes
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTimeOfDayChanged, float, NewTimeOfDay);
@@ -110,6 +110,9 @@ private:
 	// Methods
 	void UpdateTimeOfDay(float DeltaTime);
 	void UpdateWellnessTint(float DeltaTime);
-	void HandleWellnessStatusChanged(EWellnessStatus NewStatus);
 	FLinearColor GetTintForWellnessStatus(EWellnessStatus Status) const;
+
+	// Delegate handler - must be UFUNCTION for dynamic delegate binding
+	UFUNCTION()
+	void HandleWellnessStatusChanged(EWellnessStatus NewStatus);
 };

@@ -139,7 +139,7 @@ void AHideWall::OnHitByProjectile(AActor* ProjectileActor, float DamageAmount)
     FlashHitColor();
 
     // Apply damage to wall
-    TakeDamage(DamageAmount);
+    ApplyInternalDamage(DamageAmount);
     OnSwitchHit(DamageAmount);
     // Destroy projectile 
     ProjectileActor->Destroy();
@@ -495,7 +495,7 @@ void AHideWall::RevertToOriginalColor()
 
 }
 
-void AHideWall::TakeDamage(float DamageAmount)
+void AHideWall::ApplyInternalDamage(float DamageAmount)
 {
     if (CurrentHealth <= 0.0f)
     {
@@ -512,6 +512,8 @@ void AHideWall::TakeDamage(float DamageAmount)
         DestroyWall();
     }
 }
+
+
 
 void AHideWall::DestroyWall()
 {

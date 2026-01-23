@@ -30,7 +30,8 @@ enum class EExternalAppCategory : uint8
 	ProjectManagement, // Jira, Trello, Asana
 	BuildTools,        // Jenkins, build monitors
 	WebBrowser,        // General web browsing
-	Terminal           // Command line tools
+	Terminal,          // Command line tools
+	GameEngine         // Unreal Engine, Unity, Godot
 };
 
 // Known application definition
@@ -183,4 +184,5 @@ private:
 	static TArray<FKnownApplication> CreateCommunicationApplications();
 	static TArray<FKnownApplication> CreateProjectManagementApplications();
 	static TArray<FKnownApplication> CreateTerminalApplications();
+	static TArray<FKnownApplication> CreateGameEngineApplications();
 };

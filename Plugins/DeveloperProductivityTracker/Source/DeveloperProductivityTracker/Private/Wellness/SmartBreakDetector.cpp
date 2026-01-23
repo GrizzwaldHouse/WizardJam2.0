@@ -19,15 +19,13 @@
 
 DEFINE_LOG_CATEGORY(LogSmartBreak);
 
-// Hysteresis time to prevent rapid break toggling
-static const float HysteresisDelay = 5.0f;
-
 USmartBreakDetector::USmartBreakDetector()
 	: ConfidenceThresholdToStartBreak(0.6f)
 	, ConfidenceThresholdToEndBreak(0.3f)
 	, ConfidenceThresholdToSuggestBreak(0.4f)
 	, MinimumBreakDurationSeconds(60.0f)
 	, InactivityThresholdSeconds(120.0f)
+	, BreakCooldownSeconds(180.0f)
 	, bIsOnBreak(false)
 	, BreakStartTime(FDateTime::MinValue())
 	, ConfidenceAccumulator(0.0f)
@@ -44,9 +42,23 @@ void USmartBreakDetector::Tick(float DeltaTime)
 	// Calculate current confidence
 	float Confidence = CurrentSignals.CalculateBreakConfidence();
 
-	// Handle hysteresis
+	// Log detailed confidence breakdown for debugging
+	UE_LOG(LogSmartBreak, Verbose,
+		TEXT("Confidence: %.2f | ScreenLocked=%s(+0.4) NoInput=%s(+0.3) NoProductiveApp=%s(+0.2) DevicesIdle=%s(+0.1) MCPActive=%s(-0.15)"),
+		Confidence,
+		CurrentSignals.bScreenLocked ? TEXT("YES") : TEXT("no"),
+		CurrentSignals.bNoInputDetected ? TEXT("YES") : TEXT("no"),
+		CurrentSignals.bNoProductiveAppFocused ? TEXT("YES") : TEXT("no"),
+		(CurrentSignals.bMouseIdle && CurrentSignals.bKeyboardIdle) ? TEXT("YES") : TEXT("no"),
+		CurrentSignals.bMCPConnectionActive ? TEXT("YES") : TEXT("no")
+	);
+
+	// Handle hysteresis/cooldown
 	if (HysteresisTimer > 0.0f)
 	{
+		UE_LOG(LogSmartBreak, Verbose,
+			TEXT("Break detection suppressed - cooldown active: %.1f seconds remaining"),
+			HysteresisTimer);
 		HysteresisTimer -= DeltaTime;
 		return;
 	}
@@ -144,6 +156,9 @@ void USmartBreakDetector::UpdateDetectionSignals()
 	// Check productive app focus (this would integrate with ExternalActivityMonitor)
 	// For now, we use editor focus as a proxy
 	CurrentSignals.bNoProductiveAppFocused = CurrentSignals.bEditorLostFocus;
+
+	// Check MCP server activity
+	CurrentSignals.bMCPConnectionActive = CheckMCPConnectionState();
 }
 
 void USmartBreakDetector::StartBreak(float Confidence)
@@ -193,12 +208,15 @@ void USmartBreakDetector::EndBreak()
 		UE_LOG(LogSmartBreak, Verbose, TEXT("Break too short (%.1f seconds) - not recorded"), Duration);
 	}
 
-	// Reset state with hysteresis
+	// Reset state with configurable cooldown
 	bIsOnBreak = false;
 	BreakStartTime = FDateTime::MinValue();
 	ConfidenceAccumulator = 0.0f;
 	ConfidenceSamples = 0;
-	HysteresisTimer = HysteresisDelay;
+	HysteresisTimer = BreakCooldownSeconds;
+
+	UE_LOG(LogSmartBreak, Log, TEXT("Cooldown started: %.1f seconds before break detection resumes"),
+		BreakCooldownSeconds);
 }
 
 bool USmartBreakDetector::CheckScreenLockState()
@@ -243,4 +261,49 @@ float USmartBreakDetector::GetSecondsSinceLastInput() const
 	double CurrentTime = FSlateApplication::Get().GetCurrentTime();
 
 	return static_cast<float>(CurrentTime - LastInteraction);
+}
+
+bool USmartBreakDetector::CheckMCPConnectionState()
+{
+#if PLATFORM_WINDOWS
+	// Check if MCP named pipe server has active connections
+	// This indicates Claude Code or similar MCP client is actively connected
+	HANDLE hPipe = CreateFile(
+		TEXT("\\\\.\\pipe\\unreal-mcp"),
+		GENERIC_READ,
+		0,
+		nullptr,
+		OPEN_EXISTING,
+		0,
+		nullptr
+	);
+
+	if (hPipe != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(hPipe);
+		return true;
+	}
+
+	// Also check for alternative MCP pipe names
+	hPipe = CreateFile(
+		TEXT("\\\\.\\pipe\\claude-mcp"),
+		GENERIC_READ,
+		0,
+		nullptr,
+		OPEN_EXISTING,
+		0,
+		nullptr
+	);
+
+	if (hPipe != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(hPipe);
+		return true;
+	}
+
+	return false;
+#else
+	// Platform not supported for MCP detection
+	return false;
+#endif
 }
