@@ -207,3 +207,234 @@ Delegate Pattern:
 - Use Observer pattern - NO polling in Tick()
 - Components broadcast state changes
 - UI widgets listen and update via bound delegates
+
+
+📚 LESSONS LEARNED COMPENDIUM (January 2026)
+============================================
+
+🔴 CRITICAL FAILURES & SOLUTIONS (12+ hours debugging each):
+
+1. FBlackboardKeySelector Silent Failure (Day 17-21)
+   SYMPTOM: Key selected in editor, code runs, logs show success, but blackboard never updates
+   ROOT CAUSE: Missing BOTH AddObjectFilter() in constructor AND InitializeFromAsset() override
+   SOLUTION: Every FBlackboardKeySelector needs constructor filter + InitializeFromAsset with ResolveSelectedKey()
+   TIME LOST: ~12 hours across multiple sessions
+   PREVENTION: Added mandatory code review checklist to CLAUDE.md
+
+2. AI Perception Not Detecting Actors
+   SYMPTOM: AI walks past brooms/collectibles without seeing them
+   ROOT CAUSE: Missing UAIPerceptionStimuliSourceComponent on perceivable actors
+   SOLUTION: Add perception source component and register for sight/hearing
+   RELATED: Team ID filtering can block perception - check GetTeamAttitudeTowards()
+
+3. Team ID Blocking Pickups
+   SYMPTOM: AI detects collectible but CanPickup() returns false
+   ROOT CAUSE: Faction/team restrictions in pickup code (copied from GAR combat)
+   SOLUTION: Pickups should only check IPickupInterface, not team allegiance
+
+4. Enhanced Input Missing Context
+   SYMPTOM: Input actions don't fire despite proper binding
+   ROOT CAUSE: #include "InputMappingContext.h" missing in .cpp
+   SOLUTION: Forward declarations insufficient for UInputMappingContext - need full include
+
+5. Generated.h Placement
+   SYMPTOM: "must appear at top following all other includes" compiler error
+   ROOT CAUSE: .generated.h placed first instead of last
+   SOLUTION: .generated.h MUST be the LAST include in UCLASS headers
+
+🟡 ARCHITECTURE DECISIONS THAT WORKED:
+
+1. Component Composition over Inheritance
+   AC_BroomComponent attaches to ANY actor (player, AI) without base class changes
+   AC_SpellCollectionComponent same pattern - attach and use
+   AC_StaminaComponent - shared stamina system
+   BENEFIT: Add flight to any character with one component addition
+
+2. Configuration Structs (FBroomConfiguration pattern)
+   All gameplay values in one designer-editable struct
+   Component reads struct at runtime - zero hardcoded values
+   Preset factory functions for common configurations
+   BENEFIT: Designers create new broom types without C++ changes
+
+3. Input-Agnostic Core API
+   SetFlightEnabled(), SetVerticalInput(), SetBoostEnabled()
+   Players call through input handlers, AI calls directly
+   BENEFIT: Identical flight mechanics for all actors
+
+4. Static Delegates for Global Events
+   OnAnySpellCollected - GameMode binds once, receives from all components
+   BENEFIT: No direct references, clean decoupling
+
+🟢 PATTERNS FROM NICK PENNEY GAR CLASS TO REUSE:
+
+1. EQS for Target Finding (instead of services with perception)
+   Nick's GAR agents used EQS to find players, cover, patrol points
+   EQS queries are designer-configurable in editor
+   BENEFIT: Avoids the FBlackboardKeySelector initialization pitfalls
+
+2. Decorator-Based BT Structure
+   Nick used decorators to check conditions, not services
+   Services ran continuously and sometimes had race conditions
+   Decorators are cleaner: check condition → run child or abort
+
+3. Separate Attack/Patrol Behavior Trees
+   BT_Standard for patrol/roam until player detected
+   BT_Attack for combat sequences (shoot, reload, flee to cover)
+   Switch trees on perception state change
+   BENEFIT: Cleaner separation of concerns
+
+
+🎮 QUIDDITCH AI BEHAVIORS BRAINSTORM (20+ Behaviors)
+====================================================
+
+PRE-MATCH ACQUISITION PHASE:
+1. BTTask_FindBroomChannel - Locate and collect "Broom" channel collectible
+2. BTTask_FindBroomActor - Locate interactable broom in world
+3. BTTask_InteractWithBroom - Mount broom via IInteractable interface
+4. BTService_MonitorChannel - Watch for channel state changes
+5. BTDecorator_HasChannel - Gate behaviors on channel possession
+
+FLIGHT CONTROL BEHAVIORS:
+6. BTTask_TakeOff - Initial ascent to minimum flight altitude
+7. BTTask_Land - Controlled descent to ground
+8. BTTask_HoverInPlace - Maintain position (idle state)
+9. BTTask_FlyToLocation - Navigate to world position
+10. BTTask_FlyToActor - Navigate to moving target (player, ball)
+11. BTTask_FollowFormation - Maintain position relative to team
+12. BTService_UpdateFlightTarget - Continuously update target location
+13. BTService_MonitorStamina - Watch stamina for rest decisions
+14. BTDecorator_IsFlying - Gate ground vs flight behaviors
+15. BTDecorator_HasStamina - Gate movement on stamina availability
+
+QUIDDITCH ROLE BEHAVIORS (SEEKER):
+16. BTTask_SearchForSnitch - Patrol pattern while scanning
+17. BTTask_ChaseSnitch - High-speed pursuit of snitch
+18. BTTask_CatchSnitch - Final grab attempt
+19. BTService_TrackSnitch - Update snitch position continuously
+
+QUIDDITCH ROLE BEHAVIORS (CHASER):
+20. BTTask_FindQuaffle - Locate the quaffle
+21. BTTask_CatchQuaffle - Intercept thrown/dropped quaffle
+22. BTTask_CarryQuaffle - Hold while flying
+23. BTTask_ThrowToTeammate - Pass to another chaser
+24. BTTask_ThrowAtGoal - Score attempt
+25. BTService_EvaluatePassOptions - Find open teammates
+26. BTDecorator_HasBall - Gate behaviors on ball possession
+
+QUIDDITCH ROLE BEHAVIORS (BEATER):
+27. BTTask_FindBludger - Locate nearest bludger
+28. BTTask_HitBludgerAtTarget - Aim and strike bludger at enemy
+29. BTTask_InterceptBludger - Block bludger heading for teammate
+30. BTService_TrackBludgers - Monitor all bludgers
+
+QUIDDITCH ROLE BEHAVIORS (KEEPER):
+31. BTTask_GuardGoal - Position between threat and goal
+32. BTTask_BlockShot - Intercept incoming quaffle
+33. BTTask_ClearQuaffle - Throw quaffle away from goal area
+34. BTService_EvaluateThreat - Determine most dangerous attacker
+
+TEAM COORDINATION BEHAVIORS:
+35. BTTask_FormOnLeader - Move to formation position
+36. BTTask_CallForPass - Signal desire to receive quaffle
+37. BTTask_SetPlay - Execute named formation
+38. BTService_TeamCommunication - Share information with teammates
+
+DEFENSIVE/EVASIVE BEHAVIORS:
+39. BTTask_DodgeBludger - Evade incoming bludger
+40. BTTask_BlockOpponent - Body-block without fouling
+41. BTTask_Retreat - Fall back to defensive position
+42. BTDecorator_UnderAttack - React to incoming threats
+
+STAMINA MANAGEMENT:
+43. BTTask_RestInPlace - Stop and regenerate stamina
+44. BTTask_GlideDownward - Conserve stamina while descending
+45. BTDecorator_LowStamina - Trigger rest behaviors
+
+
+📊 UPDATED SESSION STATUS (January 22, 2026)
+============================================
+
+✅ FULLY WORKING:
+- AI perceives BP_BroomCollectible at 500 units
+- BTService_FindCollectible writes to PerceivedCollectible blackboard key
+- BroomCollectible has AI perception registration
+- AI collects "Broom" channel from BroomCollectible
+- AI waits for broom channel, then navigates to BroomActor
+- AI interacts with broom to mount
+- AI flies (short duration due to stamina drain on current broom type)
+- Health/Stamina/SpellCollection components initialized
+- QuidditchGameMode registers agents correctly
+
+🔄 NEXT PRIORITY TASKS:
+1. Create BP_Broom_Firebolt using GetQuidditchPreset() configuration
+   - Infinite duration, drain only when moving, regen when idle
+   - Place in level to test longer flight
+
+2. Create QuidditchStagingZone actor
+   - C++ class: AQuidditchStagingZone
+   - Team formation volumes
+   - Target point for AI flight navigation
+   - "Ready" detection for match start
+
+3. Create BTService_UpdateFlightTarget
+   - Reads StagingZone reference from blackboard
+   - Writes target location for BTTask_ControlFlight
+
+4. Test extended flight with Firebolt broom
+   - Verify stamina regen when idle
+   - Verify no dismount on depletion
+   - Verify AI can reach staging zone
+
+5. HUD Integration (consider migrating from original WizardJam)
+   - Spell slot UI already working in original project
+   - Evaluate migration vs rebuild effort
+
+
+🎯 RECOMMENDED APPROACH: USE BASEAGENT FOR QUIDDITCH
+====================================================
+
+The question of whether to use BaseAgent's AI controller for Quidditch:
+
+RECOMMENDATION: YES - Extend AIC_CodeBaseAgentController for Quidditch
+
+RATIONALE:
+- BaseAgent already has shooting, reload, flee behaviors
+- AIC_CodeBaseAgentController has perception setup (sight + hearing)
+- Can add QuidditchStagingZone detection to existing perception
+- Add flight-specific blackboard keys without losing combat keys
+- Wand attacks reuse existing EnemyAttack() with different animations
+
+IMPLEMENTATION:
+1. Create AIC_QuidditchController as child of AIC_CodeBaseAgentController
+2. Add flight-specific blackboard keys (IsFlying, FlightTarget, etc.)
+3. Add BroomComponent to BaseAgent (or QuidditchAgent child)
+4. Override perception update to include brooms/balls
+5. Create BT_Quidditch that includes combat behaviors
+
+This avoids rebuilding 12+ hours of tested AI controller code.
+
+
+🏗️ HUD MIGRATION DECISION
+==========================
+
+Original WizardJam has:
+- Spell slot UI with texture swapping
+- Health bar
+- Working delegate bindings
+
+Current WizardJam2.0 (this project) has:
+- AC_SpellCollectionComponent with delegates
+- AC_StaminaComponent with delegates
+- AC_BroomComponent with flight state delegates
+- No working HUD widget yet
+
+RECOMMENDATION: MIGRATE the spell slot widget from original project
+- Faster than rebuilding
+- Already tested and styled
+- Connect to new components via delegates
+
+STEPS:
+1. Copy WBP_SpellSlotHUD from original project
+2. Update delegate bindings to new component names
+3. Add flight stamina bar using existing AC_BroomComponent delegates
+4. Test in QuidditchGameMode
