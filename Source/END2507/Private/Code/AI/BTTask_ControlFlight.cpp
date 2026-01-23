@@ -26,6 +26,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Object.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
+#include "BehaviorTree/Blackboard/BlackboardKeyType_Bool.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -52,6 +53,11 @@ UBTTask_ControlFlight::UBTTask_ControlFlight()
         AActor::StaticClass());
     TargetKey.AddVectorFilter(this,
         GET_MEMBER_NAME_CHECKED(UBTTask_ControlFlight, TargetKey));
+
+    // Optional IsFlying key filter - if set, reads flight state from Blackboard
+    // This supports the observer pattern where Controller maintains flight state
+    IsFlyingKey.AddBoolFilter(this,
+        GET_MEMBER_NAME_CHECKED(UBTTask_ControlFlight, IsFlyingKey));
 }
 
 // ============================================================================
@@ -71,20 +77,35 @@ EBTNodeResult::Type UBTTask_ControlFlight::ExecuteTask(
         return EBTNodeResult::Failed;
     }
 
-    // Verify pawn has broom component and is flying
-    UAC_BroomComponent* BroomComp = 
+    // Verify pawn has broom component
+    UAC_BroomComponent* BroomComp =
         AIController->GetPawn()->FindComponentByClass<UAC_BroomComponent>();
-    
+
     if (!BroomComp)
     {
-        UE_LOG(LogTemp, Warning, 
+        UE_LOG(LogTemp, Warning,
             TEXT("[BTTask_ControlFlight] Pawn has no AC_BroomComponent"));
         return EBTNodeResult::Failed;
     }
 
-    if (!BroomComp->IsFlying())
+    // Check flight state - prefer Blackboard (observer pattern) over component query
+    bool bIsFlying = false;
+    UBlackboardComponent* Blackboard = OwnerComp.GetBlackboardComponent();
+
+    if (IsFlyingKey.IsSet() && Blackboard)
     {
-        UE_LOG(LogTemp, Warning, 
+        // Observer pattern: Read from Blackboard (maintained by Controller delegate)
+        bIsFlying = Blackboard->GetValueAsBool(IsFlyingKey.SelectedKeyName);
+    }
+    else
+    {
+        // Legacy fallback: Query component directly
+        bIsFlying = BroomComp->IsFlying();
+    }
+
+    if (!bIsFlying)
+    {
+        UE_LOG(LogTemp, Warning,
             TEXT("[BTTask_ControlFlight] Pawn is not flying - run BTTask_MountBroom first"));
         return EBTNodeResult::Failed;
     }
@@ -125,11 +146,37 @@ void UBTTask_ControlFlight::TickTask(
         return;
     }
 
+    // Get BroomComponent for flight control (SetVerticalInput, SetBoostEnabled)
     UAC_BroomComponent* BroomComp = AIPawn->FindComponentByClass<UAC_BroomComponent>();
-    if (!BroomComp || !BroomComp->IsFlying())
+    if (!BroomComp)
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("[BTTask_ControlFlight] Pawn has no BroomComponent"));
+        FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+        return;
+    }
+
+    // Check flight state - prefer Blackboard (observer pattern) over component query
+    bool bIsFlying = false;
+    UBlackboardComponent* Blackboard = OwnerComp.GetBlackboardComponent();
+
+    if (IsFlyingKey.IsSet() && Blackboard)
+    {
+        // Observer pattern: Read from Blackboard (maintained by Controller delegate)
+        bIsFlying = Blackboard->GetValueAsBool(IsFlyingKey.SelectedKeyName);
+    }
+    else
+    {
+        // Legacy fallback: Query component directly
+        bIsFlying = BroomComp->IsFlying();
+    }
+
+    if (!bIsFlying)
     {
         // Lost flight capability - task fails
-        UE_LOG(LogTemp, Warning, 
+        // NOTE: With proper architecture, a parent decorator observing IsFlying
+        // should abort this task before we get here
+        UE_LOG(LogTemp, Warning,
             TEXT("[BTTask_ControlFlight] Lost flight during task"));
         FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
         return;
@@ -293,10 +340,11 @@ void UBTTask_ControlFlight::InitializeFromAsset(UBehaviorTree& Asset)
 {
     Super::InitializeFromAsset(Asset);
 
-    // Resolve blackboard key against the behavior tree's blackboard asset
-    // Without this, TargetKey.SelectedKeyType and SelectedKeyName won't be set
+    // Resolve blackboard keys against the behavior tree's blackboard asset
+    // Without this, key selectors won't be set correctly at runtime
     if (UBlackboardData* BBAsset = GetBlackboardAsset())
     {
         TargetKey.ResolveSelectedKey(*BBAsset);
+        IsFlyingKey.ResolveSelectedKey(*BBAsset);
     }
 }

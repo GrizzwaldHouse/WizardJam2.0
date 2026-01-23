@@ -13,6 +13,8 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AIPerceptionTypes.h"
 #include "Code/Actors/BaseAgent.h"
+#include "Code/Flight/AC_BroomComponent.h"
+#include "Code/Utilities/AC_SpellCollectionComponent.h"
 #include "GenericTeamAgentInterface.h"
 
 DEFINE_LOG_CATEGORY(LogQuidditchAI);
@@ -28,6 +30,10 @@ AAIC_QuidditchController::AAIC_QuidditchController()
     , IsFlyingKeyName(TEXT("IsFlying"))
     , SelfActorKeyName(TEXT("SelfActor"))
     , PerceivedCollectibleKeyName(TEXT("PerceivedCollectible"))
+    , IsBoostingKeyName(TEXT("IsBoosting"))
+    , HasBroomChannelKeyName(TEXT("HasBroomChannel"))
+    , CachedBroomComponent(nullptr)
+    , CachedSpellComponent(nullptr)
 {
     // Create perception component
     AIPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerception"));
@@ -99,6 +105,13 @@ void AAIC_QuidditchController::OnPossess(APawn* InPawn)
     // Initialize blackboard
     SetupBlackboard(InPawn);
 
+    // ========================================================================
+    // OBSERVER PATTERN - Bind to component delegates
+    // Controller is the "brain" that interprets "body" state changes
+    // and updates Blackboard for BT decorator observation
+    // ========================================================================
+    BindComponentDelegates(InPawn);
+
     // Run behavior tree if assigned
     if (BehaviorTreeAsset)
     {
@@ -124,6 +137,9 @@ void AAIC_QuidditchController::OnPossess(APawn* InPawn)
 void AAIC_QuidditchController::OnUnPossess()
 {
     UE_LOG(LogQuidditchAI, Display, TEXT("[%s] OnUnPossess"), *GetName());
+
+    // Unbind component delegates to prevent stale references
+    UnbindComponentDelegates();
 
     if (UBehaviorTreeComponent* BTComp = Cast<UBehaviorTreeComponent>(BrainComponent))
     {
@@ -358,4 +374,171 @@ void AAIC_QuidditchController::SetGenericTeamId(const FGenericTeamId& NewTeamID)
 FGenericTeamId AAIC_QuidditchController::GetGenericTeamId() const
 {
     return Super::GetGenericTeamId();
+}
+
+// ============================================================================
+// OBSERVER PATTERN - Component Delegate Bindings
+// The Controller is the "Brain" - it listens to "Body" (components) state
+// and updates the Blackboard. BT decorators observe Blackboard with Aborts.
+// ============================================================================
+
+void AAIC_QuidditchController::BindComponentDelegates(APawn* InPawn)
+{
+    if (!InPawn)
+    {
+        UE_LOG(LogQuidditchAI, Warning,
+            TEXT("[%s] BindComponentDelegates - null pawn"), *GetName());
+        return;
+    }
+
+    // Bind to AC_BroomComponent delegates
+    CachedBroomComponent = InPawn->FindComponentByClass<UAC_BroomComponent>();
+    if (CachedBroomComponent)
+    {
+        CachedBroomComponent->OnFlightStateChanged.AddDynamic(
+            this, &AAIC_QuidditchController::HandleFlightStateChanged);
+        CachedBroomComponent->OnBoostStateChanged.AddDynamic(
+            this, &AAIC_QuidditchController::HandleBoostStateChanged);
+
+        UE_LOG(LogQuidditchAI, Display,
+            TEXT("[%s] Bound to AC_BroomComponent delegates"), *GetName());
+
+        // Initialize Blackboard with current state
+        if (Blackboard)
+        {
+            Blackboard->SetValueAsBool(IsFlyingKeyName, CachedBroomComponent->IsFlying());
+            Blackboard->SetValueAsBool(IsBoostingKeyName, CachedBroomComponent->IsBoosting());
+        }
+    }
+    else
+    {
+        UE_LOG(LogQuidditchAI, Log,
+            TEXT("[%s] Pawn has no AC_BroomComponent - flight bindings skipped"), *GetName());
+    }
+
+    // Bind to AC_SpellCollectionComponent delegates
+    CachedSpellComponent = InPawn->FindComponentByClass<UAC_SpellCollectionComponent>();
+    if (CachedSpellComponent)
+    {
+        CachedSpellComponent->OnChannelAdded.AddDynamic(
+            this, &AAIC_QuidditchController::HandleChannelAdded);
+        CachedSpellComponent->OnChannelRemoved.AddDynamic(
+            this, &AAIC_QuidditchController::HandleChannelRemoved);
+
+        UE_LOG(LogQuidditchAI, Display,
+            TEXT("[%s] Bound to AC_SpellCollectionComponent delegates"), *GetName());
+
+        // Initialize Blackboard with current channel state
+        if (Blackboard)
+        {
+            bool bHasBroom = CachedSpellComponent->HasChannel(TEXT("Broom"));
+            Blackboard->SetValueAsBool(HasBroomChannelKeyName, bHasBroom);
+
+            UE_LOG(LogQuidditchAI, Log,
+                TEXT("[%s] Initial HasBroomChannel: %s"),
+                *GetName(), bHasBroom ? TEXT("TRUE") : TEXT("FALSE"));
+        }
+    }
+    else
+    {
+        UE_LOG(LogQuidditchAI, Log,
+            TEXT("[%s] Pawn has no AC_SpellCollectionComponent - channel bindings skipped"), *GetName());
+    }
+}
+
+void AAIC_QuidditchController::UnbindComponentDelegates()
+{
+    // Unbind from AC_BroomComponent
+    if (CachedBroomComponent)
+    {
+        CachedBroomComponent->OnFlightStateChanged.RemoveDynamic(
+            this, &AAIC_QuidditchController::HandleFlightStateChanged);
+        CachedBroomComponent->OnBoostStateChanged.RemoveDynamic(
+            this, &AAIC_QuidditchController::HandleBoostStateChanged);
+
+        UE_LOG(LogQuidditchAI, Display,
+            TEXT("[%s] Unbound from AC_BroomComponent delegates"), *GetName());
+
+        CachedBroomComponent = nullptr;
+    }
+
+    // Unbind from AC_SpellCollectionComponent
+    if (CachedSpellComponent)
+    {
+        CachedSpellComponent->OnChannelAdded.RemoveDynamic(
+            this, &AAIC_QuidditchController::HandleChannelAdded);
+        CachedSpellComponent->OnChannelRemoved.RemoveDynamic(
+            this, &AAIC_QuidditchController::HandleChannelRemoved);
+
+        UE_LOG(LogQuidditchAI, Display,
+            TEXT("[%s] Unbound from AC_SpellCollectionComponent delegates"), *GetName());
+
+        CachedSpellComponent = nullptr;
+    }
+}
+
+void AAIC_QuidditchController::UpdateChannelBlackboardKey(FName Channel, bool bHasChannel)
+{
+    if (!Blackboard)
+    {
+        return;
+    }
+
+    // Map channel names to Blackboard key names
+    // Currently supporting "Broom" - extend as needed for Fire, Teleport, etc.
+    if (Channel == TEXT("Broom"))
+    {
+        Blackboard->SetValueAsBool(HasBroomChannelKeyName, bHasChannel);
+    }
+    // Add more channel mappings as needed:
+    // else if (Channel == TEXT("Fire")) { ... }
+    // else if (Channel == TEXT("Teleport")) { ... }
+}
+
+// ============================================================================
+// COMPONENT DELEGATE HANDLERS
+// These are called when component state changes. They update Blackboard.
+// ============================================================================
+
+void AAIC_QuidditchController::HandleFlightStateChanged(bool bIsFlying)
+{
+    UE_LOG(LogQuidditchAI, Display,
+        TEXT("[%s] HandleFlightStateChanged: %s"),
+        *GetName(), bIsFlying ? TEXT("FLYING") : TEXT("GROUNDED"));
+
+    // Update Blackboard - this is the proper observer pattern
+    // BT decorators observing IsFlying will re-evaluate via Observer Aborts
+    SetIsFlying(bIsFlying);
+}
+
+void AAIC_QuidditchController::HandleBoostStateChanged(bool bIsBoosting)
+{
+    UE_LOG(LogQuidditchAI, Log,
+        TEXT("[%s] HandleBoostStateChanged: %s"),
+        *GetName(), bIsBoosting ? TEXT("BOOSTING") : TEXT("NORMAL"));
+
+    if (Blackboard)
+    {
+        Blackboard->SetValueAsBool(IsBoostingKeyName, bIsBoosting);
+    }
+}
+
+void AAIC_QuidditchController::HandleChannelAdded(FName Channel)
+{
+    UE_LOG(LogQuidditchAI, Display,
+        TEXT("[%s] HandleChannelAdded: %s"),
+        *GetName(), *Channel.ToString());
+
+    // Update Blackboard key for this channel
+    UpdateChannelBlackboardKey(Channel, true);
+}
+
+void AAIC_QuidditchController::HandleChannelRemoved(FName Channel)
+{
+    UE_LOG(LogQuidditchAI, Display,
+        TEXT("[%s] HandleChannelRemoved: %s"),
+        *GetName(), *Channel.ToString());
+
+    // Update Blackboard key for this channel
+    UpdateChannelBlackboardKey(Channel, false);
 }

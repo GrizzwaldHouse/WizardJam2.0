@@ -37,6 +37,11 @@ UBTTask_Interact::UBTTask_Interact()
     // Success state key filter - boolean
     SuccessStateKey.AddBoolFilter(this,
         GET_MEMBER_NAME_CHECKED(UBTTask_Interact, SuccessStateKey));
+
+    // Required channel key filter - boolean (observer pattern)
+    // If set, task reads channel state from Blackboard instead of component query
+    RequiredChannelKey.AddBoolFilter(this,
+        GET_MEMBER_NAME_CHECKED(UBTTask_Interact, RequiredChannelKey));
 }
 
 // ============================================================================
@@ -51,6 +56,7 @@ void UBTTask_Interact::InitializeFromAsset(UBehaviorTree& Asset)
     {
         TargetKey.ResolveSelectedKey(*BBAsset);
         SuccessStateKey.ResolveSelectedKey(*BBAsset);
+        RequiredChannelKey.ResolveSelectedKey(*BBAsset);
     }
 }
 
@@ -96,11 +102,14 @@ EBTNodeResult::Type UBTTask_Interact::ExecuteTask(
         return EBTNodeResult::Failed;
     }
 
-    // Check required channel
-    if (!HasRequiredChannel(AIPawn))
+    // Check required channel - uses Blackboard if RequiredChannelKey is set
+    if (!HasRequiredChannel(AIPawn, Blackboard))
     {
+        FString ChannelDesc = RequiredChannelKey.IsSet()
+            ? RequiredChannelKey.SelectedKeyName.ToString()
+            : RequiredChannel.ToString();
         UE_LOG(LogTemp, Warning, TEXT("[BTTask_Interact] AI lacks required channel: %s"),
-            *RequiredChannel.ToString());
+            *ChannelDesc);
         return EBTNodeResult::Failed;
     }
 
@@ -204,9 +213,17 @@ bool UBTTask_Interact::TryInteract(UBehaviorTreeComponent& OwnerComp, AActor* Ta
     return true;
 }
 
-bool UBTTask_Interact::HasRequiredChannel(APawn* Pawn) const
+bool UBTTask_Interact::HasRequiredChannel(APawn* Pawn, UBlackboardComponent* Blackboard) const
 {
-    // If no channel required, always pass
+    // PREFERRED: Observer pattern - read from Blackboard key
+    // Controller maintains this key via OnChannelAdded/OnChannelRemoved delegates
+    if (RequiredChannelKey.IsSet() && Blackboard)
+    {
+        return Blackboard->GetValueAsBool(RequiredChannelKey.SelectedKeyName);
+    }
+
+    // LEGACY: Direct component query with FName
+    // If no channel required (and no Blackboard key), always pass
     if (RequiredChannel == NAME_None)
     {
         return true;
@@ -235,9 +252,16 @@ FString UBTTask_Interact::GetStaticDescription() const
         InteractionRange
     );
 
-    if (RequiredChannel != NAME_None)
+    // Show channel requirement - prefer Blackboard key over legacy FName
+    if (RequiredChannelKey.IsSet())
     {
-        Description += FString::Printf(TEXT("\nRequires channel: %s"), *RequiredChannel.ToString());
+        Description += FString::Printf(TEXT("\nRequires (BB): %s"),
+            *RequiredChannelKey.SelectedKeyName.ToString());
+    }
+    else if (RequiredChannel != NAME_None)
+    {
+        Description += FString::Printf(TEXT("\nRequires (legacy): %s"),
+            *RequiredChannel.ToString());
     }
 
     if (bClearTargetOnSuccess)

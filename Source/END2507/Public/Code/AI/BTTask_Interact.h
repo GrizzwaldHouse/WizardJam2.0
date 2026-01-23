@@ -58,9 +58,16 @@ protected:
         meta = (ClampMin = "50.0", ClampMax = "500.0"))
     float InteractionRange;
 
-    // If set, AI must have this channel to interact (e.g., "Broom")
-    UPROPERTY(EditAnywhere, Category = "Interaction")
+    // LEGACY: If set, AI must have this channel to interact (e.g., "Broom")
+    // Uses direct component query - prefer RequiredChannelKey for observer pattern
+    UPROPERTY(EditAnywhere, Category = "Interaction|Legacy")
     FName RequiredChannel;
+
+    // PREFERRED: Blackboard key for channel requirement (Bool)
+    // If set, task reads this key (maintained by Controller via OnChannelAdded delegate)
+    // If not set, falls back to RequiredChannel FName with direct component query
+    UPROPERTY(EditAnywhere, Category = "Interaction")
+    FBlackboardKeySelector RequiredChannelKey;
 
     // Clear target from blackboard after successful interaction
     UPROPERTY(EditAnywhere, Category = "Interaction")
@@ -72,5 +79,9 @@ protected:
 
 private:
     bool TryInteract(UBehaviorTreeComponent& OwnerComp, AActor* Target);
-    bool HasRequiredChannel(APawn* Pawn) const;
+
+    // Checks if required channel is met
+    // If RequiredChannelKey is set, reads from Blackboard (observer pattern)
+    // Otherwise falls back to direct component query with RequiredChannel FName
+    bool HasRequiredChannel(APawn* Pawn, UBlackboardComponent* Blackboard) const;
 };

@@ -76,6 +76,13 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Flight|Target")
     FBlackboardKeySelector TargetKey;
 
+    // Optional: Blackboard key for flight state (Bool)
+    // If set, task reads IsFlying from Blackboard (observer pattern)
+    // If not set, task queries BroomComponent directly (legacy)
+    // RECOMMENDED: Set this and use with a parent decorator for proper abort behavior
+    UPROPERTY(EditAnywhere, Category = "Flight|State")
+    FBlackboardKeySelector IsFlyingKey;
+
     // ========================================================================
     // FLIGHT PARAMETERS
     // ========================================================================

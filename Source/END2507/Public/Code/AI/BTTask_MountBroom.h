@@ -36,7 +36,10 @@
 
 #include "CoreMinimal.h"
 #include "BehaviorTree/BTTaskNode.h"
+#include "BehaviorTree/BehaviorTreeTypes.h"
 #include "BTTask_MountBroom.generated.h"
+
+class UBehaviorTree;
 
 UCLASS(meta = (DisplayName = "Mount/Dismount Broom"))
 class END2507_API UBTTask_MountBroom : public UBTTaskNode
@@ -48,11 +51,15 @@ public:
 
     // Execute the task - mounts or dismounts the broom
     virtual EBTNodeResult::Type ExecuteTask(
-        UBehaviorTreeComponent& OwnerComp, 
+        UBehaviorTreeComponent& OwnerComp,
         uint8* NodeMemory) override;
 
     // Description shown in Behavior Tree editor
     virtual FString GetStaticDescription() const override;
+
+    // CRITICAL: Resolves blackboard key at runtime
+    // Without this, FlightStateKey.IsSet() returns false even when configured!
+    virtual void InitializeFromAsset(UBehaviorTree& Asset) override;
 
 protected:
     // If true, mount the broom. If false, dismount.

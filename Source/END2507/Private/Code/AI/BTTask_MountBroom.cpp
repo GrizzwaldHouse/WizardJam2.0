@@ -19,7 +19,9 @@
 #include "Code/AI/BTTask_MountBroom.h"
 #include "Code/Flight/AC_BroomComponent.h"
 #include "AIController.h"
+#include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "BehaviorTree/Blackboard/BlackboardKeyType_Bool.h"
 #include "GameFramework/Character.h"
 
 // ============================================================================
@@ -30,9 +32,14 @@ UBTTask_MountBroom::UBTTask_MountBroom()
     : bMountBroom(true)
 {
     NodeName = "Mount/Dismount Broom";
-    
+
     // This task completes immediately (instant action)
     bNotifyTick = false;
+
+    // CRITICAL FIX (January 23, 2026): Add bool filter for FlightStateKey
+    // Without this, the key dropdown shows options but IsSet() returns false at runtime
+    FlightStateKey.AddBoolFilter(this,
+        GET_MEMBER_NAME_CHECKED(UBTTask_MountBroom, FlightStateKey));
 }
 
 // ============================================================================
@@ -120,13 +127,30 @@ EBTNodeResult::Type UBTTask_MountBroom::ExecuteTask(
 FString UBTTask_MountBroom::GetStaticDescription() const
 {
     FString ActionText = bMountBroom ? TEXT("Mount") : TEXT("Dismount");
-    
+
     if (FlightStateKey.IsSet())
     {
-        return FString::Printf(TEXT("%s Broom\n(Store result in: %s)"), 
+        return FString::Printf(TEXT("%s Broom\n(Store result in: %s)"),
             *ActionText,
             *FlightStateKey.SelectedKeyName.ToString());
     }
-    
+
     return FString::Printf(TEXT("%s Broom"), *ActionText);
+}
+
+// ============================================================================
+// INITIALIZE FROM ASSET (CRITICAL for Blackboard key resolution)
+// Added January 23, 2026 - fixes silent failure where IsSet() returns false
+// ============================================================================
+
+void UBTTask_MountBroom::InitializeFromAsset(UBehaviorTree& Asset)
+{
+    Super::InitializeFromAsset(Asset);
+
+    // Resolve blackboard key against the behavior tree's blackboard asset
+    // Without this, FlightStateKey.SelectedKeyType and SelectedKeyName won't be set
+    if (UBlackboardData* BBAsset = GetBlackboardAsset())
+    {
+        FlightStateKey.ResolveSelectedKey(*BBAsset);
+    }
 }

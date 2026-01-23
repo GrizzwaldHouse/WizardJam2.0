@@ -19,9 +19,18 @@
 // BLACKBOARD KEYS USED:
 // - TargetLocation (Vector): Destination for flight
 // - TargetActor (Object): Actor to follow (optional, overrides location)
-// - IsFlying (Bool): Current flight state
+// - IsFlying (Bool): Current flight state (updated by OnFlightStateChanged delegate)
+// - IsBoosting (Bool): Current boost state (updated by OnBoostStateChanged delegate)
+// - HasBroomChannel (Bool): Whether pawn has "Broom" channel (updated by OnChannelAdded delegate)
 // - SelfActor (Object): Reference to controlled pawn
 // - PerceivedCollectible (Object): Nearest collectible from perception
+//
+// OBSERVER PATTERN ARCHITECTURE (January 23, 2026 Refactor):
+// This controller implements proper observer-driven AI by:
+// 1. Binding to component delegates (AC_BroomComponent, AC_SpellCollectionComponent)
+// 2. Updating Blackboard keys when component state changes
+// 3. BT decorators observe Blackboard keys with Observer Aborts
+// 4. Result: Immediate BT re-evaluation on state change, no polling
 // ============================================================================
 
 #pragma once
@@ -155,10 +164,57 @@ protected:
     UFUNCTION()
     void HandlePerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
+    // ========================================================================
+    // COMPONENT DELEGATE HANDLERS - Observer Pattern
+    // Controller binds to component delegates and updates Blackboard
+    // This is the "brain" interpreting "body" state changes
+    // ========================================================================
+
+    // Called when AC_BroomComponent flight state changes
+    UFUNCTION()
+    void HandleFlightStateChanged(bool bIsFlying);
+
+    // Called when AC_BroomComponent boost state changes
+    UFUNCTION()
+    void HandleBoostStateChanged(bool bIsBoosting);
+
+    // Called when AC_SpellCollectionComponent adds a channel
+    UFUNCTION()
+    void HandleChannelAdded(FName Channel);
+
+    // Called when AC_SpellCollectionComponent removes a channel
+    UFUNCTION()
+    void HandleChannelRemoved(FName Channel);
+
 private:
     void SetupBlackboard(APawn* InPawn);
+    void BindComponentDelegates(APawn* InPawn);
+    void UnbindComponentDelegates();
 
-    // Blackboard key for perceived collectible
+    // Helper to update channel-specific Blackboard keys
+    void UpdateChannelBlackboardKey(FName Channel, bool bHasChannel);
+
+    // ========================================================================
+    // BLACKBOARD KEY NAMES - Extended for Observer Pattern
+    // ========================================================================
+
     UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Blackboard")
     FName PerceivedCollectibleKeyName;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Blackboard")
+    FName IsBoostingKeyName;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Blackboard")
+    FName HasBroomChannelKeyName;
+
+    // ========================================================================
+    // CACHED COMPONENT REFERENCES
+    // Stored for delegate unbinding in OnUnPossess
+    // ========================================================================
+
+    UPROPERTY()
+    class UAC_BroomComponent* CachedBroomComponent;
+
+    UPROPERTY()
+    class UAC_SpellCollectionComponent* CachedSpellComponent;
 };
