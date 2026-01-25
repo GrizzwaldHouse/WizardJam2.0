@@ -123,3 +123,4 @@ Plugins/**/Intermediate/
 # Large external project files for AI agent development reference
 # -----------------------------------------------------------------------------
 Artificial-Intelligence/
+/nul
