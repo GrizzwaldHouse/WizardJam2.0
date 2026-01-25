@@ -1,0 +1,479 @@
+================================================================================
+     WIZARDJAM - BEHAVIOR TREE NODE CONFIGURATION GUIDE
+     Developer: Marcus Daley
+     Date: January 24, 2026
+
+     This guide explains EACH custom BT node and exactly how to configure
+     its properties in the Unreal Engine Editor
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+  SECTION 1: How to Add Nodes in the BT Editor
+  SECTION 2: Services
+      - BTService_FindCollectible
+      - BTService_FindInteractable
+  SECTION 3: Tasks
+      - BTTask_MountBroom
+      - BTTask_ControlFlight
+      - BTTask_Interact
+      - BTTask_CheckBroomChannel
+      - BTTask_ForceMount (DEBUG)
+  SECTION 4: Decorators
+      - BTDecorator_HasChannel
+  SECTION 5: Blackboard Key Reference
+
+
+================================================================================
+SECTION 1: HOW TO ADD NODES IN THE BT EDITOR
+================================================================================
+
+ADDING A TASK:
+  1. Right-click on a Composite node (Sequence/Selector)
+  2. Select "Add Task"
+  3. Find your task in the list (e.g., "Mount/Dismount Broom")
+  4. Click to add it
+
+ADDING A SERVICE:
+  1. Right-click on a Composite node (Sequence/Selector)
+  2. Select "Add Service"
+  3. Find your service (e.g., "Find Collectible")
+  4. Click to add it
+  5. Service appears as a small box attached to the composite
+
+ADDING A DECORATOR:
+  1. Right-click on ANY node (Task or Composite)
+  2. Select "Add Decorator"
+  3. Find your decorator (e.g., "Has Channel")
+  4. Click to add it
+  5. Decorator appears above the node
+
+SELECTING A NODE TO CONFIGURE:
+  1. Click on the node in the graph
+  2. Look at the "Details" panel on the right
+  3. All configurable properties appear there
+
+
+================================================================================
+SECTION 2: SERVICES
+================================================================================
+
+------------------------------------------------------------------------------
+BTService_FindCollectible
+Display Name: "Find Collectible"
+------------------------------------------------------------------------------
+
+PURPOSE:
+  Scans AI perception for collectible actors (like BP_BroomCollectible)
+  and writes the nearest one to a blackboard key.
+
+WHEN TO USE:
+  - When AI needs to find and collect an item (broom, spell pickup)
+  - Attach to the sequence that handles item acquisition
+
+HOW TO ADD:
+  1. Right-click a Sequence or Selector node
+  2. Add Service > Find Collectible
+
+PROPERTIES TO CONFIGURE:
+
+  +------------------------------------------------------------------+
+  | Property            | What to Set                                |
+  +------------------------------------------------------------------+
+  | CollectibleClass    | BP_BroomCollectible_C                      |
+  |                     | (Click dropdown, search "BroomCollectible")|
+  |                     | Leave "None" to find ANY collectible       |
+  +------------------------------------------------------------------+
+  | OutputKey           | PerceivedCollectible                       |
+  |                     | (Click dropdown, select from blackboard)   |
+  |                     | MUST be an Object type key!                |
+  +------------------------------------------------------------------+
+  | RequiredGrantChannel| Broom                                      |
+  |                     | (Type the channel name)                    |
+  |                     | Leave empty to find any collectible        |
+  +------------------------------------------------------------------+
+  | MaxSearchDistance   | 0                                          |
+  |                     | (0 = unlimited range)                      |
+  |                     | Set to 1000 to limit search to 1000 units  |
+  +------------------------------------------------------------------+
+  | Interval            | 0.5 (default)                              |
+  |                     | How often the service checks (in seconds)  |
+  +------------------------------------------------------------------+
+
+SCREENSHOT REFERENCE (what it looks like configured):
+  +--------------------------------+
+  |    Find Collectible            |
+  |  CollectibleClass: BroomColl.  |
+  |  OutputKey: PerceivedCollect.  |
+  |  RequiredGrantChannel: Broom   |
+  |  MaxSearchDistance: 0          |
+  +--------------------------------+
+
+
+------------------------------------------------------------------------------
+BTService_FindInteractable
+Display Name: "Find Interactable"
+------------------------------------------------------------------------------
+
+PURPOSE:
+  Scans AI perception for actors with IInteractable interface
+  (mounted brooms, doors, switches, NPCs).
+
+WHEN TO USE:
+  - When AI needs to find something to interact WITH (not pick up)
+  - Different from FindCollectible: this finds things to USE
+
+HOW TO ADD:
+  1. Right-click a Sequence or Selector node
+  2. Add Service > Find Interactable
+
+PROPERTIES TO CONFIGURE:
+
+  +------------------------------------------------------------------+
+  | Property            | What to Set                                |
+  +------------------------------------------------------------------+
+  | InteractableClass   | BroomActor (or BP_Broom_C)                 |
+  |                     | Leave "None" for ANY interactable          |
+  +------------------------------------------------------------------+
+  | OutputKey           | TargetActor                                |
+  |                     | (Must be Object type blackboard key)       |
+  +------------------------------------------------------------------+
+  | MaxSearchDistance   | 0                                          |
+  |                     | (0 = unlimited)                            |
+  +------------------------------------------------------------------+
+  | bRequireCanInteract | TRUE                                       |
+  |                     | Only finds things that CAN be interacted   |
+  |                     | (filters out brooms already being ridden)  |
+  +------------------------------------------------------------------+
+
+
+================================================================================
+SECTION 3: TASKS
+================================================================================
+
+------------------------------------------------------------------------------
+BTTask_MountBroom
+Display Name: "Mount/Dismount Broom"
+------------------------------------------------------------------------------
+
+PURPOSE:
+  Makes the AI mount or dismount a broom by calling SetFlightEnabled()
+  on the AI pawn's AC_BroomComponent.
+
+WHEN TO USE:
+  - After AI has acquired broom channel (collected broom collectible)
+  - To start flying or to land
+
+PREREQUISITE:
+  - AI pawn MUST have AC_BroomComponent attached!
+
+HOW TO ADD:
+  1. Right-click a Sequence node
+  2. Add Task > Mount/Dismount Broom
+
+PROPERTIES TO CONFIGURE:
+
+  +------------------------------------------------------------------+
+  | Property            | What to Set                                |
+  +------------------------------------------------------------------+
+  | bMountBroom         | TRUE to mount (start flying)               |
+  |                     | FALSE to dismount (land)                   |
+  +------------------------------------------------------------------+
+  | FlightStateKey      | IsFlying (optional)                        |
+  |                     | Blackboard Bool key to store result        |
+  |                     | Leave empty if using decorator instead     |
+  +------------------------------------------------------------------+
+
+EXAMPLE CONFIGURATIONS:
+
+  For MOUNTING (start flight):
+    bMountBroom: TRUE
+    FlightStateKey: IsFlying
+
+  For DISMOUNTING (land):
+    bMountBroom: FALSE
+    FlightStateKey: IsFlying
+
+
+------------------------------------------------------------------------------
+BTTask_ControlFlight
+Display Name: "Control Flight"
+------------------------------------------------------------------------------
+
+PURPOSE:
+  Continuously controls AI flight toward a target location.
+  Adjusts altitude, handles boost, and moves AI through 3D space.
+  TICKS EVERY FRAME while active.
+
+WHEN TO USE:
+  - After BTTask_MountBroom succeeds
+  - When AI needs to fly to a destination
+
+PREREQUISITE:
+  - AI must already be flying (IsFlying = true)
+  - Target location must be set in blackboard
+
+HOW TO ADD:
+  1. Right-click a Sequence node
+  2. Add Task > Control Flight
+
+PROPERTIES TO CONFIGURE:
+
+  +------------------------------------------------------------------+
+  | Property              | What to Set           | Notes            |
+  +------------------------------------------------------------------+
+  | TargetKey             | TargetLocation        | Vector key for   |
+  |                       | OR TargetActor        | destination      |
+  |                       |                       | (from dropdown)  |
+  +------------------------------------------------------------------+
+  | ArrivalTolerance      | 200                   | How close to get |
+  |                       |                       | before "arrived" |
+  +------------------------------------------------------------------+
+  | AltitudeTolerance     | 100                   | Vertical margin  |
+  +------------------------------------------------------------------+
+  | bUseBoostWhenFar      | TRUE                  | Enable boost?    |
+  +------------------------------------------------------------------+
+  | BoostDistanceThreshold| 500                   | How far to boost |
+  |                       |                       | (only if above   |
+  |                       |                       | checkbox is true)|
+  +------------------------------------------------------------------+
+  | VerticalInputMultiplier| 1.0                  | Speed of ascend/ |
+  |                       |                       | descend (0.1-1.0)|
+  +------------------------------------------------------------------+
+  | bDirectFlight         | TRUE                  | TRUE: fly direct |
+  |                       |                       | FALSE: nav only  |
+  +------------------------------------------------------------------+
+
+EXAMPLE CONFIGURATION (Flying to staging zone):
+
+  TargetKey: TargetLocation
+  ArrivalTolerance: 200
+  AltitudeTolerance: 100
+  bUseBoostWhenFar: TRUE
+  BoostDistanceThreshold: 800
+  VerticalInputMultiplier: 0.8
+  bDirectFlight: TRUE
+
+
+------------------------------------------------------------------------------
+BTTask_Interact
+Display Name: "Interact With Target"
+------------------------------------------------------------------------------
+
+PURPOSE:
+  Makes AI interact with an actor that has IInteractable interface.
+  Moves to target if needed, then calls Interact().
+
+WHEN TO USE:
+  - After BTService_FindInteractable locates a target
+  - For mounting brooms, opening doors, using switches
+
+HOW TO ADD:
+  1. Right-click a Sequence node
+  2. Add Task > Interact With Target
+
+PROPERTIES TO CONFIGURE:
+
+  +------------------------------------------------------------------+
+  | Property              | What to Set           | Notes            |
+  +------------------------------------------------------------------+
+  | TargetKey             | PerceivedCollectible  | The actor to     |
+  |                       | OR TargetActor        | interact with    |
+  +------------------------------------------------------------------+
+  | InteractionRange      | 150                   | How close AI     |
+  |                       |                       | must be (units)  |
+  +------------------------------------------------------------------+
+  | RequiredChannel       | (empty)               | Leave empty OR   |
+  |                       | OR "Broom"            | set channel name |
+  +------------------------------------------------------------------+
+  | bClearTargetOnSuccess | TRUE                  | Clear blackboard |
+  |                       |                       | key after done?  |
+  +------------------------------------------------------------------+
+  | SuccessStateKey       | HasBroom (optional)   | Bool key to set  |
+  |                       |                       | on success       |
+  +------------------------------------------------------------------+
+
+
+------------------------------------------------------------------------------
+BTTask_CheckBroomChannel
+Display Name: "Check Broom Channel"
+------------------------------------------------------------------------------
+
+PURPOSE:
+  Checks if AI has the "Broom" channel and sets a blackboard Bool key.
+  Bridges the SpellCollectionComponent channel system with blackboard.
+
+WHEN TO USE:
+  - After collecting broom collectible
+  - To update HasBroom blackboard key for decorators
+
+WHY THIS EXISTS:
+  When AI collects BP_BroomCollectible, it gets the "Broom" channel.
+  But the blackboard HasBroom key doesn't auto-update. This task
+  syncs the channel state to the blackboard.
+
+HOW TO ADD:
+  1. Right-click a Sequence node
+  2. Add Task > Check Broom Channel
+
+PROPERTIES TO CONFIGURE:
+
+  +------------------------------------------------------------------+
+  | Property              | What to Set           | Notes            |
+  +------------------------------------------------------------------+
+  | ChannelToCheck        | Broom                 | The channel name |
+  |                       |                       | (case sensitive) |
+  +------------------------------------------------------------------+
+  | HasBroomKey           | HasBroom              | Bool blackboard  |
+  |                       |                       | key to set true  |
+  +------------------------------------------------------------------+
+
+
+------------------------------------------------------------------------------
+BTTask_ForceMount (DEBUG ONLY)
+Display Name: "Force Mount (DEBUG)"
+------------------------------------------------------------------------------
+
+PURPOSE:
+  TEST/DEBUG ONLY! Spawns a broom and mounts it immediately.
+  Bypasses normal acquisition flow for testing flight system.
+
+WHEN TO USE:
+  - ONLY for testing BTTask_ControlFlight
+  - Remove from production behavior trees!
+
+HOW TO ADD:
+  1. Right-click a Sequence node
+  2. Add Task > Force Mount (DEBUG)
+
+PROPERTIES TO CONFIGURE:
+
+  +------------------------------------------------------------------+
+  | Property              | What to Set           | Notes            |
+  +------------------------------------------------------------------+
+  | BroomClass            | BP_Broom              | Blueprint class  |
+  |                       |                       | for broom actor  |
+  +------------------------------------------------------------------+
+  | SpawnOffset           | X:0, Y:0, Z:50        | Where to spawn   |
+  |                       |                       | relative to AI   |
+  +------------------------------------------------------------------+
+
+
+================================================================================
+SECTION 4: DECORATORS
+================================================================================
+
+------------------------------------------------------------------------------
+BTDecorator_HasChannel
+Display Name: "Has Channel"
+------------------------------------------------------------------------------
+
+PURPOSE:
+  Gates a behavior tree branch based on whether the AI pawn has
+  a specific channel in its AC_SpellCollectionComponent.
+
+WHEN TO USE:
+  - To check if AI has broom before flying
+  - To check if AI has spell school before casting
+  - To gate progression-locked behaviors
+
+HOW TO ADD:
+  1. Right-click on a Sequence, Selector, or Task node
+  2. Add Decorator > Has Channel
+
+PROPERTIES TO CONFIGURE:
+
+  +------------------------------------------------------------------+
+  | Property              | What to Set           | Notes            |
+  +------------------------------------------------------------------+
+  | ChannelName           | Broom                 | Name of channel  |
+  |                       |                       | (case sensitive) |
+  +------------------------------------------------------------------+
+  | bInvertResult         | FALSE                 | FALSE: pass if   |
+  |                       |                       |   channel EXISTS |
+  |                       | TRUE                  | TRUE: pass if    |
+  |                       |                       |   channel MISSING|
+  +------------------------------------------------------------------+
+
+EXAMPLE CONFIGURATIONS:
+
+  "Only run if AI HAS broom":
+    ChannelName: Broom
+    bInvertResult: FALSE
+
+  "Only run if AI NEEDS broom (doesn't have it)":
+    ChannelName: Broom
+    bInvertResult: TRUE
+
+
+================================================================================
+SECTION 5: BLACKBOARD KEY REFERENCE
+================================================================================
+
+These are the blackboard keys referenced by the nodes above.
+Create ALL of these in BB_QuidditchAI:
+
+  +------------------------------------------------------------------+
+  | Key Name             | Type     | Used By                        |
+  +------------------------------------------------------------------+
+  | SelfActor            | Object   | Controller (auto-set)          |
+  +------------------------------------------------------------------+
+  | PerceivedCollectible | Object   | BTService_FindCollectible      |
+  |                      |          | BTTask_Interact                |
+  +------------------------------------------------------------------+
+  | TargetActor          | Object   | BTService_FindInteractable     |
+  |                      |          | BTTask_ControlFlight           |
+  +------------------------------------------------------------------+
+  | TargetLocation       | Vector   | BTTask_ControlFlight           |
+  +------------------------------------------------------------------+
+  | IsFlying             | Bool     | BTTask_MountBroom              |
+  |                      |          | Decorator conditions           |
+  +------------------------------------------------------------------+
+  | HasBroom             | Bool     | BTTask_CheckBroomChannel       |
+  |                      |          | Decorator conditions           |
+  +------------------------------------------------------------------+
+
+
+================================================================================
+QUICK SETUP CHECKLIST
+================================================================================
+
+Before testing, verify:
+
+  [ ] BB_QuidditchAI has all 6 keys listed above
+  [ ] BT_QuidditchAI has BB_QuidditchAI assigned (ROOT node)
+  [ ] BTService_FindCollectible has OutputKey set to PerceivedCollectible
+  [ ] BTTask_MountBroom has bMountBroom = TRUE for mounting
+  [ ] BTTask_ControlFlight has TargetKey set to TargetLocation or TargetActor
+  [ ] BTDecorator_HasChannel has ChannelName = "Broom"
+  [ ] AI Controller has BehaviorTreeAsset assigned
+  [ ] AI Pawn has AC_BroomComponent attached
+  [ ] AI Pawn has AC_SpellCollectionComponent attached
+
+
+================================================================================
+TROUBLESHOOTING NODE ISSUES
+================================================================================
+
+"Property dropdown shows nothing":
+  - The blackboard isn't assigned to the behavior tree
+  - Fix: Select ROOT, set Blackboard Asset
+
+"Node fails immediately":
+  - Check Output Log for error messages
+  - Verify prerequisites are met (component exists, etc.)
+
+"Service never finds anything":
+  - Is the collectible within perception range? (2000 units default)
+  - Does collectible register with AI perception system?
+  - Check Output Log for perception events
+
+"Control Flight doesn't move AI":
+  - Is AI already flying? (IsFlying must be true)
+  - Is TargetKey actually set in blackboard?
+  - Check ArrivalTolerance isn't huge (200 is good)
+
+
+================================================================================
+END OF NODE CONFIGURATION GUIDE
+================================================================================

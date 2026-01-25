@@ -1,0 +1,496 @@
+================================================================================
+     WIZARDJAM - QUIDDITCH AI BEHAVIOR TREE SETUP GUIDE
+     Developer: Marcus Daley
+     Date: January 24, 2026
+
+     This guide walks you through setting up BT_QuidditchAI in Unreal Editor
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+  PART 1: Verify Content Assets Exist
+  PART 2: Create Blackboard Keys (BB_QuidditchAI)
+  PART 3: Set Up Behavior Tree Structure (BT_QuidditchAI)
+  PART 4: Configure AI Controller Blueprint
+  PART 5: Configure Agent Blueprint (BP_QuidditchAgent)
+  PART 6: Place Actors in Level and Test
+  PART 7: Troubleshooting Common Issues
+
+
+================================================================================
+PART 1: VERIFY CONTENT ASSETS EXIST
+================================================================================
+
+Before starting, verify these files exist in your Content Browser:
+
+Location: Content/Code/AI/
+  [x] BB_QuidditchAI.uasset          (Blackboard Data)
+  [x] BT_QuidditchAI.uasset          (Behavior Tree)
+
+Location: Content/Code/Actors/
+  [x] BP_QuidditchAgent.uasset       (AI Pawn Blueprint)
+  [x] BP_BroomCollectible.uasset     (Broom Pickup)
+  [x] BP_Broom.uasset                (Mountable Broom)
+
+Location: Content/Code/AI/ (or wherever your controller is)
+  [x] BP_CodeQuidditchAIController.uasset  (AI Controller Blueprint)
+
+IF ANY ARE MISSING:
+  - Right-click in Content Browser
+  - Create Basic Asset > (appropriate type)
+  - Or duplicate existing similar assets
+
+
+================================================================================
+PART 2: CREATE BLACKBOARD KEYS (BB_QuidditchAI)
+================================================================================
+
+STEP 1: Open the Blackboard
+---------------------------
+  1. In Content Browser, navigate to: Content/Code/AI/
+  2. Double-click BB_QuidditchAI to open it
+
+STEP 2: Add Required Keys
+-------------------------
+  Click "New Key" button for each key below:
+
+  KEY #1: SelfActor
+  -----------------
+    - Click "New Key" dropdown
+    - Select: Object
+    - Name: SelfActor
+    - In Details panel, set Base Class: Actor
+
+  KEY #2: TargetLocation
+  ----------------------
+    - Click "New Key" dropdown
+    - Select: Vector
+    - Name: TargetLocation
+
+  KEY #3: TargetActor
+  -------------------
+    - Click "New Key" dropdown
+    - Select: Object
+    - Name: TargetActor
+    - In Details panel, set Base Class: Actor
+
+  KEY #4: PerceivedCollectible
+  ----------------------------
+    - Click "New Key" dropdown
+    - Select: Object
+    - Name: PerceivedCollectible
+    - In Details panel, set Base Class: Actor
+
+  KEY #5: IsFlying
+  ----------------
+    - Click "New Key" dropdown
+    - Select: Bool
+    - Name: IsFlying
+
+  KEY #6: HasBroom
+  ----------------
+    - Click "New Key" dropdown
+    - Select: Bool
+    - Name: HasBroom
+
+STEP 3: Save the Blackboard
+---------------------------
+  Press Ctrl+S to save
+
+
+================================================================================
+PART 3: SET UP BEHAVIOR TREE STRUCTURE (BT_QuidditchAI)
+================================================================================
+
+STEP 1: Open the Behavior Tree
+------------------------------
+  1. In Content Browser: Content/Code/AI/
+  2. Double-click BT_QuidditchAI
+
+STEP 2: Assign Blackboard
+-------------------------
+  1. Click on the ROOT node (black bar at top)
+  2. In Details panel, find "Blackboard Asset"
+  3. Set it to: BB_QuidditchAI
+
+STEP 3: Create the AcquireBroom Sequence
+----------------------------------------
+  This is the first branch - AI finds and picks up broom.
+
+  A) Add Selector under Root:
+     - Right-click ROOT > Add Composite > Selector
+     - This is the main decision node
+
+  B) Add First Sequence (AcquireBroom):
+     - Right-click Selector > Add Composite > Sequence
+     - Rename it: "AcquireBroom" (right-click > Rename)
+
+  C) Add Decorator to gate this sequence:
+     - Right-click the Sequence node
+     - Add Decorator > Blackboard Based Condition
+     - In Details:
+       * Blackboard Key: HasBroom
+       * Key Query: Is Not Set
+       * Observer Aborts: Both
+
+     This means: Only run AcquireBroom if HasBroom is FALSE
+
+  D) Add Service for finding collectibles:
+     - Right-click the Sequence node
+     - Add Service > BTService_FindCollectible
+     - In Details:
+       * Output Key: PerceivedCollectible
+       * Collectible Class Filter: BroomCollectible (or leave empty for any)
+
+  E) Add MoveTo Task:
+     - Right-click Sequence > Add Task > Move To
+     - In Details:
+       * Blackboard Key: PerceivedCollectible
+       * Acceptable Radius: 100
+
+  F) Add Interact Task:
+     - Right-click Sequence > Add Task > BTTask_Interact
+     - In Details:
+       * Target Key: PerceivedCollectible
+
+STEP 4: Create the MountBroom Sequence
+--------------------------------------
+  This runs after broom is collected but before flying.
+
+  A) Add Second Sequence under Selector:
+     - Right-click Selector > Add Composite > Sequence
+     - Rename: "MountBroom"
+
+  B) Add Decorator:
+     - Right-click Sequence > Add Decorator > BTDecorator_HasChannel
+     - In Details:
+       * Required Channel: Broom
+
+     AND another decorator:
+     - Add Decorator > Blackboard Based Condition
+       * Blackboard Key: IsFlying
+       * Key Query: Is Not Set
+
+     This means: Only run if has Broom channel AND not already flying
+
+  C) Add MountBroom Task:
+     - Right-click Sequence > Add Task > BTTask_MountBroom
+
+STEP 5: Create the Flight Sequence
+----------------------------------
+  This handles continuous flight to target.
+
+  A) Add Third Sequence under Selector:
+     - Right-click Selector > Add Composite > Sequence
+     - Rename: "FlyToTarget"
+
+  B) Add Decorator:
+     - Add Decorator > Blackboard Based Condition
+       * Blackboard Key: IsFlying
+       * Key Query: Is Set
+
+     This means: Only run if already flying
+
+  C) Add ControlFlight Task:
+     - Right-click Sequence > Add Task > BTTask_ControlFlight
+     - In Details:
+       * Target Key: TargetLocation (or TargetActor)
+       * Acceptable Radius: 200
+       * Flight Speed: 600
+
+STEP 6: Add Idle Fallback
+-------------------------
+  A) Add Wait Task at end of Selector:
+     - Right-click Selector > Add Task > Wait
+     - In Details:
+       * Wait Time: 1.0
+       * Random Deviation: 0.5
+
+STEP 7: Final Tree Structure Should Look Like:
+----------------------------------------------
+
+  ROOT
+    |
+    Selector
+    |
+    +-- [Decorator: HasBroom Is Not Set]
+    |   Sequence "AcquireBroom"
+    |   [Service: BTService_FindCollectible]
+    |     |
+    |     +-- Move To (PerceivedCollectible)
+    |     +-- BTTask_Interact (PerceivedCollectible)
+    |
+    +-- [Decorator: HasChannel=Broom, IsFlying Is Not Set]
+    |   Sequence "MountBroom"
+    |     |
+    |     +-- BTTask_MountBroom
+    |
+    +-- [Decorator: IsFlying Is Set]
+    |   Sequence "FlyToTarget"
+    |     |
+    |     +-- BTTask_ControlFlight (TargetLocation)
+    |
+    +-- Wait (1.0 sec)
+
+STEP 8: Save the Behavior Tree
+------------------------------
+  Press Ctrl+S
+
+
+================================================================================
+PART 4: CONFIGURE AI CONTROLLER BLUEPRINT
+================================================================================
+
+STEP 1: Open the Controller Blueprint
+-------------------------------------
+  1. Content Browser > Content/Code/AI/
+  2. Double-click BP_CodeQuidditchAIController
+
+STEP 2: Verify Parent Class
+---------------------------
+  1. Click "Class Settings" in toolbar
+  2. In Details, check "Parent Class"
+  3. Should be: AIC_QuidditchController
+
+STEP 3: Assign Behavior Tree
+----------------------------
+  1. Click "Class Defaults" in toolbar
+  2. In Details panel, find "Behavior Tree Asset"
+  3. Set to: BT_QuidditchAI
+
+STEP 4: Verify Perception Settings
+----------------------------------
+  1. In Components panel, find AIPerception component
+  2. Select it
+  3. In Details, verify Sight config exists:
+     - Sight Radius: 2000
+     - Lose Sight Radius: 2500
+     - Peripheral Vision Angle: 90
+     - Detect Enemies: Yes
+     - Detect Neutrals: Yes (for collectibles)
+
+STEP 5: Save
+------------
+  Press Ctrl+S
+
+
+================================================================================
+PART 5: CONFIGURE AGENT BLUEPRINT (BP_QuidditchAgent)
+================================================================================
+
+STEP 1: Open the Agent Blueprint
+--------------------------------
+  1. Content Browser > Content/Code/Actors/
+  2. Double-click BP_QuidditchAgent
+
+STEP 2: Verify Parent Class
+---------------------------
+  1. Click "Class Settings"
+  2. Parent Class should be: BaseAgent (or ABaseAgent)
+
+STEP 3: Add Required Components (if missing)
+--------------------------------------------
+  In Components panel, verify these exist. If not, add them:
+
+  A) AC_BroomComponent:
+     - Click "Add" in Components panel
+     - Search: AC_BroomComponent (or BroomComponent)
+     - Add it
+
+  B) AC_HealthComponent:
+     - Add Component > AC_HealthComponent
+
+  C) AC_StaminaComponent:
+     - Add Component > AC_StaminaComponent
+
+  D) AC_SpellCollectionComponent:
+     - Add Component > AC_SpellCollectionComponent
+
+STEP 4: Set AI Controller Class
+-------------------------------
+  1. Select the root component (Self)
+  2. In Details, find "Pawn" category
+  3. Set "AI Controller Class": BP_CodeQuidditchAIController
+  4. Set "Auto Possess AI": Placed in World AND Spawned
+
+STEP 5: Configure Mesh (optional)
+---------------------------------
+  1. Select Mesh component
+  2. Assign skeletal mesh for wizard character
+  3. Set up animation blueprint if available
+
+STEP 6: Save
+------------
+  Press Ctrl+S
+
+
+================================================================================
+PART 6: PLACE ACTORS IN LEVEL AND TEST
+================================================================================
+
+STEP 1: Open Your Test Level
+----------------------------
+  1. File > Open Level
+  2. Choose your Quidditch test map
+
+STEP 2: Place the Agent
+-----------------------
+  1. In Content Browser, find BP_QuidditchAgent
+  2. Drag it into the level viewport
+  3. Position it on the ground (NavMesh area)
+
+STEP 3: Place the Broom Collectible
+-----------------------------------
+  1. Find BP_BroomCollectible in Content Browser
+  2. Drag into level
+  3. Place it 500-1000 units away from agent
+  4. Make sure it's within agent's sight radius (2000 units)
+
+STEP 4: Verify NavMesh
+----------------------
+  1. Press 'P' to show navigation (green = walkable)
+  2. Both agent and collectible should be on green areas
+  3. If no green: Window > World Settings > set NavMeshBoundsVolume
+
+STEP 5: Set Game Mode
+---------------------
+  1. Window > World Settings
+  2. In "Game Mode" section
+  3. Set GameMode Override: QuidditchGameMode (if you have one)
+     OR leave default if just testing AI
+
+STEP 6: Play and Observe
+------------------------
+  1. Press Play (Alt+P for simulate, or regular Play)
+  2. Watch Output Log (Window > Developer Tools > Output Log)
+  3. Look for these logs:
+     - "[AIC_QuidditchController] Possessed..."
+     - "[AIC_QuidditchController] Started behavior tree..."
+     - "[BTService_FindCollectible] Found collectible..."
+
+STEP 7: Debug View
+------------------
+  While playing:
+  1. Press ' (apostrophe) to open AI Debug
+  2. Press 4 to cycle to Behavior Tree view
+  3. You should see the tree executing
+  4. Green = currently running
+  5. Red = failed
+
+
+================================================================================
+PART 7: TROUBLESHOOTING COMMON ISSUES
+================================================================================
+
+ISSUE: Agent doesn't move toward collectible
+--------------------------------------------
+CAUSE: PerceivedCollectible blackboard key not being set
+
+CHECK:
+  1. Is collectible within sight radius? (2000 units)
+  2. Is BTService_FindCollectible attached to sequence?
+  3. Open Output Log - look for perception logs
+
+FIX:
+  - Verify collectible has AI Perception Stimuli Source
+  - In BP_BroomCollectible, check for RegisterPerceptionStimuliSource call
+
+--------------------------------------------
+
+ISSUE: "OutputKey is not set!" warning in logs
+----------------------------------------------
+CAUSE: FBlackboardKeySelector not properly initialized
+
+CHECK:
+  - This is a C++ code issue
+  - The BTTask/BTService needs InitializeFromAsset override
+
+FIX:
+  - Check that C++ code has ResolveSelectedKey call
+  - Recompile the project
+
+--------------------------------------------
+
+ISSUE: Agent picks up broom but doesn't fly
+-------------------------------------------
+CAUSE: HasBroom or IsFlying blackboard keys not updating
+
+CHECK:
+  1. Is BTTask_MountBroom running? (check debug view)
+  2. Does agent have AC_BroomComponent?
+
+FIX:
+  - Verify component is attached in Blueprint
+  - Check Output Log for mount errors
+
+--------------------------------------------
+
+ISSUE: Behavior Tree shows all red/failed
+-----------------------------------------
+CAUSE: Missing blackboard assignment
+
+CHECK:
+  1. Open BT_QuidditchAI
+  2. Click ROOT node
+  3. Is Blackboard Asset set?
+
+FIX:
+  - Assign BB_QuidditchAI to the tree
+
+--------------------------------------------
+
+ISSUE: Agent spins or jitters during flight
+-------------------------------------------
+CAUSE: Flight target too close or update rate too fast
+
+FIX:
+  - Increase AcceptableRadius in BTTask_ControlFlight
+  - Check for conflicting movement inputs
+
+--------------------------------------------
+
+ISSUE: No C++ classes showing in dropdowns
+------------------------------------------
+CAUSE: Project not compiled
+
+FIX:
+  1. Close Unreal Editor
+  2. Build from Visual Studio (Ctrl+B)
+  3. Reopen Editor
+
+
+================================================================================
+QUICK REFERENCE - KEY NAMES
+================================================================================
+
+Blackboard Keys (must match EXACTLY):
+  - SelfActor
+  - TargetLocation
+  - TargetActor
+  - PerceivedCollectible
+  - IsFlying
+  - HasBroom
+
+Channel Names (case sensitive):
+  - Broom
+
+C++ Classes:
+  - AIC_QuidditchController
+  - BTService_FindCollectible
+  - BTTask_MountBroom
+  - BTTask_ControlFlight
+  - BTTask_Interact
+  - BTDecorator_HasChannel
+
+
+================================================================================
+END OF GUIDE
+================================================================================
+
+Next Steps After Setup Works:
+  1. Add QuidditchStagingZone actor for flight destination
+  2. Create BTService_UpdateFlightTarget for dynamic targets
+  3. Add Snitch and Bludger ball actors with their own BTs
+  4. Implement scoring system
+
+Questions? Update CLAUDE.md with issues and ask Claude Code for help.
