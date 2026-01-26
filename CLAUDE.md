@@ -40,6 +40,7 @@ Damage Over Time System (stretch goal only if time permits)
 
 NO EditAnywhere - Use EditDefaultsOnly or EditInstanceOnly
 NO hardcoded values in headers - Initialize in constructor or constructor initialization list
+NO ConstructorHelpers outside constructors - Use TSubclassOf<> or TSoftClassPtr<> properties set via Blueprint defaults instead. ConstructorHelpers::FClassFinder and FObjectFinder can ONLY be used in constructors - using them in BeginPlay or any other function causes a FATAL CRASH!
 Observer Pattern (Delegates) - All system communication via broadcasts
 Blueprint Exposure - Designer configures in BP, not code
 Behavior Trees for AI - No hardcoded AI logic in Tick()
@@ -155,6 +156,7 @@ UE5 Enhanced Input: Using UInputMappingContext requires #include "InputMappingCo
 UE5 UHT Rule: The .generated.h include MUST be the LAST include in any UCLASS header - placing it first causes "must appear at top following all other includes" error
 Day 17 BT Fix: FBlackboardKeySelector requires AddObjectFilter() in constructor AND InitializeFromAsset() override with ResolveSelectedKey() call. Without both, IsSet() returns false even when key is configured in editor. This is a SILENT FAILURE that causes AI to not act on perceived targets.
 Day 21 AI Broom Collection SUCCESS: AI agent now perceives, navigates to, and collects BroomCollectible. Key fixes: (1) BTService_FindCollectible with proper blackboard key initialization, (2) AI perception registration on collectibles, (3) Team ID restrictions removed from pickup logic - only IPickupInterface check required.
+Day 26 ConstructorHelpers CRASH FIX: ConstructorHelpers::FClassFinder/FObjectFinder can ONLY be used in constructors. Using them in BeginPlay or any other function causes FATAL CRASH: "FObjectFinders can't be used outside of constructors". Fix: Use TSubclassOf<> UPROPERTY set via Blueprint defaults, then call CreateWidget<>() or LoadObject<>() at runtime.
 
 
 📊 CURRENT SESSION: AI BROOM FLIGHT SYSTEM
