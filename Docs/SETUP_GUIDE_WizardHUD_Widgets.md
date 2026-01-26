@@ -4,6 +4,25 @@
 
 ---
 
+## ARCHITECTURE: OBSERVER PATTERN (NO POLLING)
+
+**CRITICAL**: These widgets use the observer pattern exclusively:
+- Widgets track internal state (`CachedPlayerScore`, `CachedAIScore`)
+- Updates come ONLY via delegate broadcasts (`OnScoreChanged`, `OnSpellAdded`, etc.)
+- **NEVER** query GameMode or components directly - just listen and react
+
+```
+GameMode broadcasts OnScoreChanged(PlayerScore, AIScore, ScoringActor)
+    ↓
+Widget.HandleScoreChanged() receives broadcast
+    ↓
+Widget updates CachedPlayerScore, CachedAIScore internally
+    ↓
+Widget updates display using cached values
+```
+
+---
+
 ## EXECUTIVE SUMMARY
 
 This guide covers setting up three critical UI widgets for the WizardJam Quidditch game:

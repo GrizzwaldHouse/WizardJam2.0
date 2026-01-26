@@ -17,7 +17,6 @@
 #include "Code/Utilities/SignalTypes.h"
 #include "Code/Actors/WorldSignalEmitter.h"
 #include "Components/TextBlock.h"
-#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogQuidditchWidget);
 
@@ -36,6 +35,10 @@ void UWizardJamQuidditchWidget::NativeConstruct()
     bMatchEnded = false;
     MatchTimeRemaining = 0.0f;
     MatchDuration = DefaultMatchDuration;
+
+    // Initialize cached scores (observer pattern - updated via delegates only)
+    CachedPlayerScore = 0;
+    CachedAIScore = 0;
 
     // Set default team labels if configured
     if (!DefaultPlayerTeamName.IsEmpty() && PlayerScoreLabel)
@@ -113,7 +116,7 @@ void UWizardJamQuidditchWidget::NativeTick(const FGeometry& MyGeometry, float In
 
 void UWizardJamQuidditchWidget::BindToGameMode()
 {
-    // Get GameMode
+    // Get GameMode ONLY for delegate binding, NOT for queries
     UWorld* World = GetWorld();
     if (!World)
     {
@@ -128,19 +131,15 @@ void UWizardJamQuidditchWidget::BindToGameMode()
         return;
     }
 
-    // Bind to score changes
+    // Bind to score changes delegate (observer pattern)
     CachedGameMode->OnScoreChanged.AddDynamic(this, &UWizardJamQuidditchWidget::HandleScoreChanged);
 
-    // Bind to match end (non-dynamic delegate requires different binding)
-    // Note: OnMatchEnded is not BlueprintAssignable, so we use AddUObject
-    // Actually looking at the header, OnMatchEnded is declared but not as UPROPERTY
-    // We'll handle match end via signals instead
+    // Initialize displays to 0 - delegate will update when scores change
+    // NO POLLING - we only update via HandleScoreChanged delegate
+    UpdatePlayerScore(0, 0);
+    UpdateAIScore(0, 0);
 
-    // Initialize with current scores
-    UpdatePlayerScore(CachedGameMode->GetPlayerScore(), 0);
-    UpdateAIScore(CachedGameMode->GetAIScore(), 0);
-
-    UE_LOG(LogQuidditchWidget, Log, TEXT("Bound to GameMode delegates"));
+    UE_LOG(LogQuidditchWidget, Log, TEXT("Bound to GameMode OnScoreChanged delegate"));
 }
 
 void UWizardJamQuidditchWidget::UnbindFromGameMode()
@@ -199,12 +198,8 @@ void UWizardJamQuidditchWidget::HandleGlobalSignal(const FSignalData& SignalData
 
         StopMatchTimer();
 
-        // Determine winner based on scores
-        bool bPlayerWon = false;
-        if (CachedGameMode)
-        {
-            bPlayerWon = CachedGameMode->GetPlayerScore() > CachedGameMode->GetAIScore();
-        }
+        // Determine winner based on cached scores (observer pattern - no GameMode query)
+        bool bPlayerWon = CachedPlayerScore > CachedAIScore;
 
         OnMatchEnded(bPlayerWon, SignalData.CustomData);
     }
@@ -254,13 +249,21 @@ void UWizardJamQuidditchWidget::UpdateAIScore(int32 NewScore, int32 PointsAdded)
 
 void UWizardJamQuidditchWidget::HandleScoreChanged(int32 PlayerScore, int32 AIScore, AActor* ScoringActor)
 {
-    // Calculate points added (would need to track previous scores for accurate delta)
-    // For now, just update the display
-    UpdatePlayerScore(PlayerScore, 0);
-    UpdateAIScore(AIScore, 0);
+    // Calculate delta from cached values (observer pattern)
+    int32 PlayerDelta = PlayerScore - CachedPlayerScore;
+    int32 AIDelta = AIScore - CachedAIScore;
 
-    UE_LOG(LogQuidditchWidget, Log, TEXT("Score changed via delegate: Player=%d, AI=%d, Scorer=%s"),
-        PlayerScore, AIScore, ScoringActor ? *ScoringActor->GetName() : TEXT("Unknown"));
+    // Update cached state
+    CachedPlayerScore = PlayerScore;
+    CachedAIScore = AIScore;
+
+    // Update display with calculated deltas for flash effect
+    UpdatePlayerScore(PlayerScore, PlayerDelta);
+    UpdateAIScore(AIScore, AIDelta);
+
+    UE_LOG(LogQuidditchWidget, Log, TEXT("Score changed via delegate: Player=%d (+%d), AI=%d (+%d), Scorer=%s"),
+        PlayerScore, PlayerDelta, AIScore, AIDelta,
+        ScoringActor ? *ScoringActor->GetName() : TEXT("Unknown"));
 }
 
 // ============================================================================
@@ -327,18 +330,12 @@ void UWizardJamQuidditchWidget::OnTimerExpired()
     // Broadcast timer expiration - GameMode should handle this
     OnMatchTimerExpired.Broadcast();
 
-    // Determine winner based on current scores and call OnMatchEnded
-    if (CachedGameMode)
-    {
-        int32 PlayerScore = CachedGameMode->GetPlayerScore();
-        int32 AIScore = CachedGameMode->GetAIScore();
+    // Determine winner based on cached scores (observer pattern - no GameMode query)
+    bool bPlayerWon = CachedPlayerScore > CachedAIScore;
+    FString Reason = FString::Printf(TEXT("Time expired - Final Score: %d to %d"),
+        CachedPlayerScore, CachedAIScore);
 
-        bool bPlayerWon = PlayerScore > AIScore;
-        FString Reason = FString::Printf(TEXT("Time expired - Final Score: %d to %d"),
-            PlayerScore, AIScore);
-
-        OnMatchEnded(bPlayerWon, Reason);
-    }
+    OnMatchEnded(bPlayerWon, Reason);
 }
 
 // ============================================================================

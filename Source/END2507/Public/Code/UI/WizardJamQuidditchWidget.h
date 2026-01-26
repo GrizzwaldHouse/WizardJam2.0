@@ -229,4 +229,12 @@ private:
 
     // Track if match has ended to prevent duplicate handling
     bool bMatchEnded;
+
+    // ========================================================================
+    // CACHED SCORE STATE (Observer Pattern)
+    // Updated ONLY via HandleScoreChanged delegate - never query GameMode
+    // ========================================================================
+
+    int32 CachedPlayerScore;
+    int32 CachedAIScore;
 };
