@@ -23,6 +23,7 @@
 #include "Code/AC_HealthComponent.h"
 #include "Code/Utilities/InteractionComponent.h"
 #include "Both/PlayerHUD.h"
+#include "Blueprint/UserWidget.h"
 
 DEFINE_LOG_CATEGORY(LogWizardPlayer);
 
@@ -36,7 +37,6 @@ AWizardPlayer::AWizardPlayer()
     , BallThrowForce(2000.0f)
     , HeldBall(EQuidditchBall::None)
     , HeldBallActor(nullptr)
-    , PlayerHUDWidget(nullptr)
 {
     PrimaryActorTick.bCanEverTick = true;
 
@@ -63,6 +63,50 @@ AWizardPlayer::AWizardPlayer()
 void AWizardPlayer::BeginPlay()
 {
     Super::BeginPlay();
+
+    // ========================================================================
+    // PLAYER DEBUG LOGGING - Diagnose spawn issues
+    // ========================================================================
+    UE_LOG(LogWizardPlayer, Warning, TEXT(""));
+    UE_LOG(LogWizardPlayer, Warning, TEXT("=== WIZARD PLAYER BEGIN PLAY ==="));
+    UE_LOG(LogWizardPlayer, Warning, TEXT("Actor Name: %s"), *GetName());
+    UE_LOG(LogWizardPlayer, Warning, TEXT("Actor Class: %s"), *GetClass()->GetName());
+    UE_LOG(LogWizardPlayer, Warning, TEXT("Location: %s"), *GetActorLocation().ToString());
+    UE_LOG(LogWizardPlayer, Warning, TEXT("Controller: %s"),
+        GetController() ? *GetController()->GetClass()->GetName() : TEXT("NULL"));
+
+    // Check skeletal mesh
+    if (USkeletalMeshComponent* MeshComp = GetMesh())
+    {
+        UE_LOG(LogWizardPlayer, Warning, TEXT("SkeletalMeshComponent: EXISTS"));
+        if (MeshComp->GetSkeletalMeshAsset())
+        {
+            UE_LOG(LogWizardPlayer, Display, TEXT("SkeletalMesh Asset: %s <- MESH OK!"),
+                *MeshComp->GetSkeletalMeshAsset()->GetName());
+        }
+        else
+        {
+            UE_LOG(LogWizardPlayer, Error, TEXT("SkeletalMesh Asset: NULL <- NO MESH ASSIGNED!"));
+            UE_LOG(LogWizardPlayer, Error, TEXT("FIX: Open BP_CodeWizardPlayer -> Mesh component -> Set Skeletal Mesh"));
+        }
+        UE_LOG(LogWizardPlayer, Warning, TEXT("Mesh Visibility: %s"),
+            MeshComp->IsVisible() ? TEXT("Visible") : TEXT("HIDDEN!"));
+    }
+    else
+    {
+        UE_LOG(LogWizardPlayer, Error, TEXT("SkeletalMeshComponent: NULL <- CRITICAL!"));
+    }
+
+    // Check components
+    UE_LOG(LogWizardPlayer, Warning, TEXT("BroomComponent: %s"), BroomComponent ? TEXT("OK") : TEXT("NULL"));
+    UE_LOG(LogWizardPlayer, Warning, TEXT("StaminaComponent: %s"), StaminaComponent ? TEXT("OK") : TEXT("NULL"));
+    UE_LOG(LogWizardPlayer, Warning, TEXT("HealthComponent: %s"), HealthComponent ? TEXT("OK") : TEXT("NULL"));
+    UE_LOG(LogWizardPlayer, Warning, TEXT("CameraBoom: %s"), CameraBoom ? TEXT("OK") : TEXT("NULL"));
+    UE_LOG(LogWizardPlayer, Warning, TEXT("FollowCamera: %s"), FollowCamera ? TEXT("OK") : TEXT("NULL"));
+    UE_LOG(LogWizardPlayer, Warning, TEXT("InteractionComponent: %s"), InteractionComponent ? TEXT("OK") : TEXT("NULL"));
+    UE_LOG(LogWizardPlayer, Warning, TEXT("HUDWidgetClasses.Num(): %d"), HUDWidgetClasses.Num());
+    UE_LOG(LogWizardPlayer, Warning, TEXT("=== WIZARD PLAYER END DEBUG ==="));
+    UE_LOG(LogWizardPlayer, Warning, TEXT(""));
 
     // Sync team ID
     TeamId = FGenericTeamId(PlayerTeamID);
@@ -496,10 +540,10 @@ bool AWizardPlayer::IsFlying() const
 
 void AWizardPlayer::SetupHUD()
 {
-    if (!PlayerHUDClass)
+    if (HUDWidgetClasses.Num() == 0)
     {
         UE_LOG(LogWizardPlayer, Warning,
-            TEXT("[%s] PlayerHUDClass not set - no HUD will be created"), *GetName());
+            TEXT("[%s] HUDWidgetClasses array is empty - no HUD widgets will be created"), *GetName());
         return;
     }
 
@@ -509,24 +553,40 @@ void AWizardPlayer::SetupHUD()
         return;
     }
 
-    PlayerHUDWidget = CreateWidget<UPlayerHUD>(PC, PlayerHUDClass);
-    if (PlayerHUDWidget)
+    // Create all configured HUD widgets
+    for (int32 i = 0; i < HUDWidgetClasses.Num(); i++)
     {
-        PlayerHUDWidget->AddToViewport();
-
-        // Initialize with current values
-        if (HealthComponent)
+        TSubclassOf<UUserWidget> WidgetClass = HUDWidgetClasses[i];
+        if (!WidgetClass)
         {
-            UpdateHUDHealth(HealthComponent->GetHealthRatio());
-        }
-        if (StaminaComponent)
-        {
-            UpdateHUDStamina(StaminaComponent->GetStaminaPercent());
+            UE_LOG(LogWizardPlayer, Warning,
+                TEXT("[%s] HUDWidgetClasses[%d] is null - skipping"), *GetName(), i);
+            continue;
         }
 
-        UE_LOG(LogWizardPlayer, Display,
-            TEXT("[%s] Player HUD created and initialized"), *GetName());
+        UUserWidget* NewWidget = CreateWidget<UUserWidget>(PC, WidgetClass);
+        if (NewWidget)
+        {
+            // Add to viewport with increasing Z-order so later widgets render on top
+            NewWidget->AddToViewport(i);
+            HUDWidgetInstances.Add(NewWidget);
+
+            // If widget is legacy UPlayerHUD, initialize with current health
+            if (UPlayerHUD* LegacyHUD = Cast<UPlayerHUD>(NewWidget))
+            {
+                if (HealthComponent)
+                {
+                    LegacyHUD->UpdateHealthBar(HealthComponent->GetHealthRatio());
+                }
+            }
+
+            UE_LOG(LogWizardPlayer, Display,
+                TEXT("[%s] HUD widget created: %s (ZOrder=%d)"), *GetName(), *WidgetClass->GetName(), i);
+        }
     }
+
+    UE_LOG(LogWizardPlayer, Display,
+        TEXT("[%s] SetupHUD complete - %d widgets created"), *GetName(), HUDWidgetInstances.Num());
 }
 
 void AWizardPlayer::BindComponentDelegates()
@@ -559,17 +619,18 @@ void AWizardPlayer::BindComponentDelegates()
 
 void AWizardPlayer::UpdateHUDStamina(float StaminaPercent)
 {
-    if (PlayerHUDWidget)
-    {
-        // PlayerHUD should have a method for stamina
-        // PlayerHUDWidget->UpdateStaminaBar(StaminaPercent);
-    }
+    // Modern widgets (WizardJamHUDWidget) handle stamina via delegate binding
+    // Legacy UPlayerHUD doesn't have stamina display
 }
 
 void AWizardPlayer::UpdateHUDHealth(float HealthPercent)
 {
-    if (PlayerHUDWidget)
+    // Update any legacy UPlayerHUD instances - modern widgets use delegate binding
+    for (UUserWidget* Widget : HUDWidgetInstances)
     {
-        PlayerHUDWidget->UpdateHealthBar(HealthPercent);
+        if (UPlayerHUD* LegacyHUD = Cast<UPlayerHUD>(Widget))
+        {
+            LegacyHUD->UpdateHealthBar(HealthPercent);
+        }
     }
 }

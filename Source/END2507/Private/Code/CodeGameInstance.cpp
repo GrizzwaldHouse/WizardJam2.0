@@ -42,18 +42,39 @@ void UCodeGameInstance::LoadGameLevel()
 	UWorld* World = GetWorld();
 	if (!World)
 	{
-		UE_LOG(LogGameInstance, Error, TEXT("Cannot load Main Menu: World is null"));
+		UE_LOG(LogGameInstance, Error, TEXT("Cannot load Game Level: World is null"));
 		return;
 	}
 	//Get first player controller to excute console command
 	APlayerController* PlayerController = World->GetFirstPlayerController();
 	if (!PlayerController)
 	{
-		UE_LOG(LogGameInstance, Error, TEXT("Cannot load Main Menu: PlayerController is null"));
+		UE_LOG(LogGameInstance, Error, TEXT("Cannot load Game Level: PlayerController is null"));
 		return;
 	}
 	UE_LOG(LogGameInstance, Log, TEXT("Loading first gameplay level: %s"), *FirstGameLevelName.ToString());
 	FString Command = FString::Printf(TEXT("open %s"), *FirstGameLevelName.ToString());
+	PlayerController->ConsoleCommand(Command);
+}
+
+void UCodeGameInstance::LoadQuidditchLevel()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		UE_LOG(LogGameInstance, Error, TEXT("Cannot load Quidditch Level: World is null"));
+		return;
+	}
+
+	APlayerController* PlayerController = World->GetFirstPlayerController();
+	if (!PlayerController)
+	{
+		UE_LOG(LogGameInstance, Error, TEXT("Cannot load Quidditch Level: PlayerController is null"));
+		return;
+	}
+
+	UE_LOG(LogGameInstance, Log, TEXT("Loading Quidditch level: %s"), *QuidditchLevelName.ToString());
+	FString Command = FString::Printf(TEXT("open %s"), *QuidditchLevelName.ToString());
 	PlayerController->ConsoleCommand(Command);
 }
 
@@ -62,14 +83,14 @@ void UCodeGameInstance::LoadCurrentLevelSafe()
 	UWorld* World = GetWorld();
 	if (!World)
 	{
-		UE_LOG(LogGameInstance, Error, TEXT(" LoadCurrentLevelSafe failed — World is null!"));
+		UE_LOG(LogGameInstance, Error, TEXT(" LoadCurrentLevelSafe failed ï¿½ World is null!"));
 		return;
 	}
 
 	APlayerController* PlayerController = World->GetFirstPlayerController();
 	if (!PlayerController)
 	{
-		UE_LOG(LogGameInstance, Error, TEXT(" LoadCurrentLevelSafe failed — No PlayerController found!"));
+		UE_LOG(LogGameInstance, Error, TEXT(" LoadCurrentLevelSafe failed ï¿½ No PlayerController found!"));
 		return;
 	}
 	FString CurrentLevelName = World->GetMapName();
@@ -89,14 +110,14 @@ void UCodeGameInstance::QuitGame()
 	UWorld* World = GetWorld();
 	if (!World)
 	{
-		UE_LOG(LogGameInstance, Error, TEXT(" QuitTheGame failed — World is null!"));
+		UE_LOG(LogGameInstance, Error, TEXT(" QuitTheGame failed ï¿½ World is null!"));
 		return;
 	}
 
 	APlayerController* PlayerController = World->GetFirstPlayerController();
 	if (!PlayerController)
 	{
-		UE_LOG(LogGameInstance, Warning, TEXT("QuitTheGame — No PlayerController, using fallback quit"));
+		UE_LOG(LogGameInstance, Warning, TEXT("QuitTheGame ï¿½ No PlayerController, using fallback quit"));
 
 		// Fallback: Use engine to quit directly
 		if (GEngine)

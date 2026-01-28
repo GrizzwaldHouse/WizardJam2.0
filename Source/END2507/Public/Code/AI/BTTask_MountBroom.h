@@ -46,9 +46,12 @@ class END2507_API UBTTask_MountBroom : public UBTTaskNode
 public:
     UBTTask_MountBroom();
 
+    // Required for FBlackboardKeySelector runtime resolution
+    virtual void InitializeFromAsset(UBehaviorTree& Asset) override;
+
     // Execute the task - mounts or dismounts the broom
     virtual EBTNodeResult::Type ExecuteTask(
-        UBehaviorTreeComponent& OwnerComp, 
+        UBehaviorTreeComponent& OwnerComp,
         uint8* NodeMemory) override;
 
     // Description shown in Behavior Tree editor

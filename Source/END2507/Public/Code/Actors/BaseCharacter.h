@@ -11,6 +11,7 @@
 #include "BaseCharacter.generated.h"
 
 class UAC_HealthComponent;
+class UAC_OverheadBarComponent;
 class ABaseRifle;
 class UAnimSequence;
 class UCharacterAnimation;
@@ -51,6 +52,10 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UAC_HealthComponent* HealthComponent;
+
+	// Overhead health/stamina bar for AI agents (null for player)
+	UPROPERTY()
+	UAC_OverheadBarComponent* OverheadBarComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Equipment")
 	ABaseRifle* EquippedRifle;

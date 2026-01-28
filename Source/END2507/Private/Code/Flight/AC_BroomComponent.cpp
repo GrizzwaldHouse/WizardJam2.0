@@ -76,9 +76,19 @@ void UAC_BroomComponent::BeginPlay()
     if (!StaminaComponent)
     {
         UE_LOG(LogBroomComponent, Error,
-            TEXT("[%s] No AC_StaminaComponent found! Flight disabled."),
+            TEXT("[%s] No AC_StaminaComponent found! Flight will be DISABLED (ForceDismount on first tick)."),
             *Owner->GetName());
-        return;
+        // NOTE: We don't return here anymore - let flight attempt but it will immediately dismount
+        // This provides clearer diagnostic in logs than silent failure
+    }
+    else
+    {
+        UE_LOG(LogBroomComponent, Display,
+            TEXT("[%s] StaminaComponent found: Stamina=%.1f/%.1f | MinToFly=%.1f"),
+            *Owner->GetName(),
+            StaminaComponent->GetCurrentStamina(),
+            StaminaComponent->GetMaxStamina(),
+            MinStaminaToFly);
     }
 
     // Bind to stamina changed event
@@ -193,9 +203,15 @@ void UAC_BroomComponent::TickComponent(float DeltaTime, ELevelTick TickType,
     // Drain stamina while flying
     DrainStamina(DeltaTime);
 
-    // Check stamina depletion
+    // Check stamina depletion - with diagnostic logging
     if (!HasSufficientStamina())
     {
+        UE_LOG(LogBroomComponent, Warning,
+            TEXT("[%s] TICK: HasSufficientStamina=FALSE | StaminaComp=%s | Stamina=%.1f | MinRequired=%.1f"),
+            *GetOwner()->GetName(),
+            StaminaComponent ? TEXT("Valid") : TEXT("NULL"),
+            StaminaComponent ? StaminaComponent->GetCurrentStamina() : -1.0f,
+            MinStaminaToFly);
         ForceDismount();
         return;
     }
@@ -212,11 +228,17 @@ void UAC_BroomComponent::SetFlightEnabled(bool bEnabled)
 {
     if (bIsFlying == bEnabled)
     {
+        UE_LOG(LogBroomComponent, Verbose,
+            TEXT("[%s] SetFlightEnabled(%s) - NO CHANGE (already %s)"),
+            *GetOwner()->GetName(),
+            bEnabled ? TEXT("TRUE") : TEXT("FALSE"),
+            bIsFlying ? TEXT("flying") : TEXT("grounded"));
         return; // No change
     }
 
     UE_LOG(LogBroomComponent, Warning,
-        TEXT("========== SetFlightEnabled(%s) START =========="),
+        TEXT("========== [%s] SetFlightEnabled(%s) START =========="),
+        *GetOwner()->GetName(),
         bEnabled ? TEXT("TRUE") : TEXT("FALSE"));
 
     // Check stamina before enabling
@@ -611,6 +633,14 @@ void UAC_BroomComponent::SetMovementMode(bool bFlying)
 
 void UAC_BroomComponent::UpdateInputContext(bool bAddContext)
 {
+    // Skip input context changes for AI-controlled characters
+    if (!PlayerController)
+    {
+        UE_LOG(LogBroomComponent, Verbose,
+            TEXT("  ? Skipping input context update (AI-controlled character)"));
+        return;
+    }
+
     if (!InputSubsystem)
     {
         UE_LOG(LogBroomComponent, Error,
@@ -651,9 +681,12 @@ bool UAC_BroomComponent::HasSufficientStamina() const
 
 void UAC_BroomComponent::ForceDismount()
 {
-    UE_LOG(LogBroomComponent, Warning,
-        TEXT("[%s] ?? FORCE DISMOUNT - Stamina depleted!"),
-        *GetOwner()->GetName());
+    UE_LOG(LogBroomComponent, Error,
+        TEXT("[%s] ?? FORCE DISMOUNT CALLED! | Stamina=%s | Current=%.1f | MinRequired=%.1f"),
+        *GetOwner()->GetName(),
+        StaminaComponent ? TEXT("Valid") : TEXT("NULL"),
+        StaminaComponent ? StaminaComponent->GetCurrentStamina() : -1.0f,
+        MinStaminaToFly);
 
     // Broadcast forced dismount event for HUD
     OnForcedDismount.Broadcast();
@@ -676,8 +709,14 @@ void UAC_BroomComponent::DrainStamina(float DeltaTime)
         return;
     }
 
-    float DrainRate = bIsBoosting ? BoostStaminaDrainRate : StaminaDrainRate;
-    float DrainAmount = DrainRate * DeltaTime;
+    // CRITICAL FIX: Only drain stamina during BOOST, not normal flight
+    // Normal flight is free, boost costs stamina
+    if (!bIsBoosting)
+    {
+        return; // No drain during normal flight
+    }
+
+    float DrainAmount = BoostStaminaDrainRate * DeltaTime;
 
     // Use ConsumeStamina() to drain stamina
     StaminaComponent->ConsumeStamina(DrainAmount);
@@ -688,6 +727,9 @@ void UAC_BroomComponent::OnStaminaChanged(AActor* Owner, float NewStamina, float
     // Force dismount if stamina drops below minimum while flying
     if (bIsFlying && NewStamina < MinStaminaToFly)
     {
+        UE_LOG(LogBroomComponent, Warning,
+            TEXT("[%s] OnStaminaChanged DISMOUNT TRIGGER: Stamina=%.1f < MinRequired=%.1f"),
+            *GetOwner()->GetName(), NewStamina, MinStaminaToFly);
         ForceDismount();
     }
 }

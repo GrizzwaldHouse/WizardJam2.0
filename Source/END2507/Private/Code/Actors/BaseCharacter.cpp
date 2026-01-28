@@ -3,13 +3,16 @@
 // Date: 10/6/2025
 #include "Code/Actors/BaseCharacter.h"
 #include "Code/AC_HealthComponent.h"
+#include "Code/UI/AC_OverheadBarComponent.h"
 #include "Code/Actors/BaseRifle.h"
 #include "Both/CharacterAnimation.h"
-#include "Components/CapsuleComponent.h" 
+#include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "../END2507.h"
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, Log, All);
 ABaseCharacter::ABaseCharacter()
+	: OverheadBarComponent(nullptr)
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -91,6 +94,19 @@ void ABaseCharacter::BeginPlay()
 	// Bind to health events
 	HealthComponent->OnHealthChanged.AddDynamic(this, &ABaseCharacter::OnHealthChanged);
 	HealthComponent->OnDeath.AddDynamic(this, &ABaseCharacter::OnDeath);
+
+	// Create overhead bar for AI only (not player)
+	bool bIsPlayerControlled = Cast<APlayerController>(GetController()) != nullptr;
+	if (!bIsPlayerControlled)
+	{
+		OverheadBarComponent = NewObject<UAC_OverheadBarComponent>(this);
+		OverheadBarComponent->RegisterComponent();
+		UE_LOG(LogBaseCharacter, Display, TEXT("[%s] Overhead bar created (AI agent)"), *GetName());
+	}
+	else
+	{
+		UE_LOG(LogBaseCharacter, Display, TEXT("[%s] Overhead bar skipped (player)"), *GetName());
+	}
 
 	// Spawn and setup rifle
 	SpawnAndAttachRifle();

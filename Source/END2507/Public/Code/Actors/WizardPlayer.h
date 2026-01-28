@@ -45,7 +45,7 @@ class UAC_StaminaComponent;
 class UAC_HealthComponent;
 class UInteractionComponent;
 class UInputAction;
-class UPlayerHUD;
+class UUserWidget;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogWizardPlayer, Log, All);
 
@@ -197,9 +197,11 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Wizard|Combat")
     float BallThrowForce;
 
-    /** HUD widget class to spawn */
+    /** HUD widget classes to spawn - designer adds multiple widgets to this array
+     *  All widgets are created and added to viewport at BeginPlay
+     *  Example: Add WBP_WizardJamHUD for spell/stamina, WBP_PlayerHUD for ammo */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Wizard|UI")
-    TSubclassOf<UPlayerHUD> PlayerHUDClass;
+    TArray<TSubclassOf<UUserWidget>> HUDWidgetClasses;
 
     // ========================================================================
     // ADDITIONAL INPUT ACTIONS
@@ -228,9 +230,9 @@ private:
     UPROPERTY()
     AActor* HeldBallActor;
 
-    /** HUD widget instance */
+    /** HUD widget instances - matches HUDWidgetClasses array */
     UPROPERTY()
-    UPlayerHUD* PlayerHUDWidget;
+    TArray<UUserWidget*> HUDWidgetInstances;
 
     // ========================================================================
     // INTERNAL HELPERS

@@ -24,7 +24,7 @@ public class END2507 : ModuleRules
      
 
 
-        PrivateDependencyModuleNames.AddRange(new string[] {  });
+        PrivateDependencyModuleNames.AddRange(new string[] { "StructuredLogging" });
 
 
         
@@ -40,6 +40,12 @@ public class END2507 : ModuleRules
         //});
         // Uncomment if you are using Slate UI
         PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+
+        // Productivity Sky System - Niagara for visual effects
+        PublicDependencyModuleNames.AddRange(new string[] {
+            "Niagara",
+            "ProceduralMeshComponent"
+        });
 		
 		// Uncomment if you are using online features
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");

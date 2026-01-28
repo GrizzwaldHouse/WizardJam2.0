@@ -1,9 +1,44 @@
 # WizardJam Development Environment
 
-**Last Updated:** January 23, 2026
+**Last Updated:** January 26, 2026
 **Developer:** Marcus Daley
-**Project:** WizardJam (Module: END2507)
+**Project:** WizardJam 2.0 (Module: END2507)
 **Engine:** Unreal Engine 5.4
+
+---
+
+## 0. Project Identity Clarification
+
+> **Why do the names not match?**
+> This project started from a class template (`BaseGame`) and evolved into WizardJam 2.0.
+> The different names across systems reflect this history.
+
+| System | Name | Location/Value |
+|--------|------|----------------|
+| **Folder** | `BaseGame` | `C:\Users\daley\UnrealProjects\BaseGame\` |
+| **UProject File** | `WizardJam2.0.uproject` | Project definition file |
+| **Module** | `END2507` | Course code from Full Sail (in Source/ folder) |
+| **Git Remote** | `WizardJam2.0.git` | `https://github.com/GrizzwaldHouse/WizardJam2.0.git` |
+| **Git Branch** | `main` | Primary development branch |
+
+### Quick Verification Commands
+
+```powershell
+# Verify you're in WizardJam 2.0
+git remote -v
+# Should show: origin  https://github.com/GrizzwaldHouse/WizardJam2.0.git
+
+# Check project file exists
+ls *.uproject
+# Should show: WizardJam2.0.uproject
+```
+
+### Important Notes
+
+- **This IS WizardJam 2.0** - The folder name "BaseGame" is a legacy artifact
+- **Module END2507** - Your course code; all C++ code lives in `Source/END2507/`
+- **Don't rename the folder** - Would require fixing many path references
+- **The .uproject file name matters** - This defines the project to Unreal Editor
 
 ---
 

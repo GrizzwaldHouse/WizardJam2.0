@@ -8,6 +8,8 @@
 #include "Code/Actors/BaseCharacter.h"
 #include "Both/CharacterAnimation.h"
 #include "Code/CodeFactionInterface.h"
+#include "Code/Quidditch/QuidditchTypes.h"
+#include "Code/GameModes/QuidditchGameMode.h"
 #include "GenericTeamAgentInterface.h"
 #include "BasePlayer.generated.h"
 
@@ -39,6 +41,30 @@ public:
 protected:
 	FGenericTeamId MyTeamID;
 	virtual void BeginPlay() override;
+
+	// Element type for this agent's appearance (queries ElementDatabase for color)
+	// Examples: "Flame" (red), "Ice" (cyan), "Lightning" (yellow), "Arcane" (purple)
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Appearance")
+	FName ElementType;
+
+	// Apply element-based color to all mesh materials
+	// Queries ElementDatabase subsystem for color based on ElementType
+	UFUNCTION(BlueprintCallable, Category = "Appearance")
+	void SetupAgentAppearance();
+
+	// ========================================================================
+	// QUIDDITCH REGISTRATION (C++-ONLY - NO BLUEPRINT GLUE)
+	// Pattern: Mirrors Health system binding in BeginPlay
+	// ========================================================================
+
+	// Quidditch team assignment (EditInstanceOnly for per-agent config)
+	UPROPERTY(EditInstanceOnly, Category = "Quidditch")
+	EQuidditchTeam QuidditchTeam;
+
+	// Preferred Quidditch role (assigned by GameMode based on availability)
+	UPROPERTY(EditInstanceOnly, Category = "Quidditch")
+	EQuidditchRole PreferredRole;
+
 	UPROPERTY(Category = Character, VisibleAnywhere)
 	class USpringArmComponent* SpringArm;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")

@@ -60,13 +60,23 @@ enum class EQuidditchBall : uint8
 // ============================================================================
 // MATCH STATE ENUM
 // Current state of the Quidditch match
+// Gas Station Pattern: States map to synchronization phases
 // ============================================================================
 
 UENUM(BlueprintType)
 enum class EQuidditchMatchState : uint8
 {
-    WaitingToStart  UMETA(DisplayName = "Waiting to Start"),
-    InProgress      UMETA(DisplayName = "Match In Progress"),
+    // Pre-match phases (Gas Station: cars arriving at starting line)
+    Initializing    UMETA(DisplayName = "Initializing"),           // Agents spawning, acquiring brooms
+    FlyingToStart   UMETA(DisplayName = "Flying to Start"),        // Agents flying to staging zones
+    WaitingForReady UMETA(DisplayName = "Waiting for Ready"),      // Gas Station: waiting at starting line
+    Countdown       UMETA(DisplayName = "Countdown"),              // Brief visual countdown before start
+
+    // Match phases (Gas Station: gun fired, fillTank loop)
+    InProgress      UMETA(DisplayName = "Match In Progress"),      // Gas Station: gun fired, match running
+    PlayerJoining   UMETA(DisplayName = "Player Joining"),         // Player joining, AI swapping teams
+
+    // End phases (Gas Station: testOver = true)
     SnitchCaught    UMETA(DisplayName = "Snitch Caught - Ending"),
     Ended           UMETA(DisplayName = "Match Ended")
 };

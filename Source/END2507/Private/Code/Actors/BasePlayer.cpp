@@ -15,6 +15,8 @@
 #include "GenericTeamAgentInterface.h"
 #include "../END2507.h"
 #include "Code/Actors/AIC_CodeBaseAgentController.h"
+#include "Code/Data/ElementDatabaseSubsystem.h"
+#include "Code/GameModes/QuidditchGameMode.h"
 DEFINE_LOG_CATEGORY_STATIC(LogCodePlayer, Log, All);
 ABasePlayer::ABasePlayer()
 {
@@ -64,10 +66,103 @@ void ABasePlayer::Tick(float DeltaTime)
 }
 
 
+void ABasePlayer::SetupAgentAppearance()
+{
+	USkeletalMeshComponent* MeshComp = GetMesh();
+	if (!MeshComp)
+	{
+		UE_LOG(LogCodePlayer, Error, TEXT("[%s] No mesh component for appearance setup"), *GetName());
+		return;
+	}
+
+	// Get total number of material slots
+	int32 NumMaterials = MeshComp->GetNumMaterials();
+	if (NumMaterials == 0)
+	{
+		UE_LOG(LogCodePlayer, Error, TEXT("[%s] No materials on mesh"), *GetName());
+		return;
+	}
+
+	// Query ElementDatabase for color based on ElementType
+	FLinearColor ElementColor = FLinearColor::White; // Default fallback
+
+	if (ElementType != NAME_None)
+	{
+		if (UElementDatabaseSubsystem* ElementDB = UElementDatabaseSubsystem::Get(this))
+		{
+			ElementColor = ElementDB->GetColorForElement(ElementType);
+			UE_LOG(LogCodePlayer, Display, TEXT("[%s] Retrieved color for element '%s': R=%.2f G=%.2f B=%.2f"),
+				*GetName(), *ElementType.ToString(), ElementColor.R, ElementColor.G, ElementColor.B);
+		}
+		else
+		{
+			UE_LOG(LogCodePlayer, Warning, TEXT("[%s] ElementDatabaseSubsystem not available - using fallback color"),
+				*GetName());
+		}
+	}
+	else
+	{
+		UE_LOG(LogCodePlayer, Warning, TEXT("[%s] No ElementType set - using white as default color"),
+			*GetName());
+	}
+
+	// Apply dynamic material to ALL slots
+	for (int32 i = 0; i < NumMaterials; ++i)
+	{
+		UMaterialInterface* BaseMaterial = MeshComp->GetMaterial(i);
+		if (BaseMaterial)
+		{
+			// Create dynamic material instance
+			UMaterialInstanceDynamic* DynMat = UMaterialInstanceDynamic::Create(BaseMaterial, this);
+			if (DynMat)
+			{
+				MeshComp->SetMaterial(i, DynMat);
+
+				// Set element color (material must have "FactionColor" or "BaseColor" parameter)
+				DynMat->SetVectorParameterValue(TEXT("FactionColor"), ElementColor);
+
+				UE_LOG(LogCodePlayer, Display, TEXT("[%s] Applied element color to material slot %d"),
+					*GetName(), i);
+			}
+		}
+	}
+
+	UE_LOG(LogCodePlayer, Display, TEXT("[%s] SetupAgentAppearance complete - Applied element '%s' color to %d material slots"),
+		*GetName(), *ElementType.ToString(), NumMaterials);
+}
+
 void ABasePlayer::BeginPlay()
 {
 	Super::BeginPlay();
 	MyTeamID = FGenericTeamId(PlayerTeamID);
+
+	// CRITICAL FIX: Apply faction color to agent materials
+	SetupAgentAppearance();
+
+	// ========================================================================
+	// QUIDDITCH REGISTRATION (C++-ONLY - NO BLUEPRINT GLUE)
+	// Pattern: Mirrors Health system delegate binding
+	// GameMode broadcasts role assignment → Agent responds
+	// ========================================================================
+	if (AQuidditchGameMode* QuidditchGM = Cast<AQuidditchGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		// Register with GameMode (same as Health system registration pattern)
+		EQuidditchRole AssignedRole = QuidditchGM->RegisterQuidditchAgent(this, PreferredRole, QuidditchTeam);
+
+		UE_LOG(LogCodePlayer, Display,
+			TEXT("[%s] Registered with QuidditchGameMode | Team=%s, Preferred=%s, Assigned=%s"),
+			*GetName(),
+			*UEnum::GetValueAsString(QuidditchTeam),
+			*UEnum::GetValueAsString(PreferredRole),
+			*UEnum::GetValueAsString(AssignedRole));
+	}
+	else
+	{
+		UE_LOG(LogCodePlayer, Warning,
+			TEXT("[%s] QuidditchGameMode not found - Quidditch registration skipped"),
+			*GetName());
+	}
+
 	APlayerController* playerController = Cast<APlayerController>(GetController());
 	if (playerController)
 	{

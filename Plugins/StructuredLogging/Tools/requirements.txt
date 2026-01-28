@@ -1,0 +1,17 @@
+# ============================================================================
+# requirements.txt
+# Python dependencies for StructuredLogging plugin tools
+# Developer: Marcus Daley
+# Date: January 25, 2026
+# ============================================================================
+
+# HTTP Server (LogServer.py)
+Flask==3.0.0
+flask-cors==4.0.0
+
+# Optional: File watching for future enhancements
+# watchdog==3.0.0
+
+# Development/Testing (optional)
+# pytest==7.4.3
+# requests==2.31.0

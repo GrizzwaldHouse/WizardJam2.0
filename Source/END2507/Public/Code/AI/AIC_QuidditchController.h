@@ -30,6 +30,7 @@
 #include "AIController.h"
 #include "Perception/AIPerceptionTypes.h"
 #include "GenericTeamAgentInterface.h"
+#include "Code/GameModes/QuidditchGameMode.h"
 #include "AIC_QuidditchController.generated.h"
 
 class UBehaviorTree;
@@ -37,6 +38,7 @@ class UBlackboardComponent;
 class UBlackboardData;
 class UAIPerceptionComponent;
 class UAISenseConfig_Sight;
+class AQuidditchGameMode;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogQuidditchAI, Log, All);
 
@@ -92,6 +94,13 @@ public:
     virtual FGenericTeamId GetGenericTeamId() const override;
 
 protected:
+    // ========================================================================
+    // LIFECYCLE - Observer Pattern Binding
+    // ========================================================================
+
+    virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
     // ========================================================================
     // COMPONENTS
     // ========================================================================
@@ -149,11 +158,25 @@ protected:
     // PERCEPTION HANDLING - Nick Penney Pattern
     // ========================================================================
 
-    virtual void BeginPlay() override;
-
     // Called by AIPerception when any actor is sensed or lost
     UFUNCTION()
     void HandlePerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
+
+    // ========================================================================
+    // QUIDDITCH AGENT CONFIGURATION
+    // Set in Blueprint child class or per-instance to configure agent's team/role
+    // ========================================================================
+
+    // Which team this AI agent belongs to (set in Blueprint or level instance)
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quidditch|Configuration")
+    EQuidditchTeam AgentQuidditchTeam;
+
+    // Preferred role for this AI agent (GameMode may assign different role if full)
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quidditch|Configuration")
+    EQuidditchRole AgentPreferredRole;
+
+    // Register this AI agent with GameMode on possess
+    void RegisterAgentWithGameMode(APawn* InPawn);
 
 private:
     void SetupBlackboard(APawn* InPawn);
@@ -161,4 +184,74 @@ private:
     // Blackboard key for perceived collectible
     UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Blackboard")
     FName PerceivedCollectibleKeyName;
+
+    // ========================================================================
+    // SYNCHRONIZATION - Gas Station Pattern (Observer Pattern)
+    // Controller binds to GameMode delegates at BeginPlay
+    // Handlers update Blackboard when events fire
+    // ========================================================================
+
+    // Cached GameMode for delegate binding (set once in BeginPlay)
+    TWeakObjectPtr<class AQuidditchGameMode> CachedGameMode;
+
+    // Delegate handlers - update Blackboard when GameMode broadcasts events
+    UFUNCTION()
+    void HandleMatchStarted(float CountdownSeconds);
+
+    UFUNCTION()
+    void HandleMatchEnded();
+
+    UFUNCTION()
+    void HandleAgentSelectedForSwap(APawn* SelectedAgent);
+
+    UFUNCTION()
+    void HandleTeamSwapComplete(APawn* SwappedAgent, EQuidditchTeam OldTeam, EQuidditchTeam NewTeam);
+
+    // Called when GameMode assigns a role to an agent
+    UFUNCTION()
+    void HandleQuidditchRoleAssigned(APawn* Agent, EQuidditchTeam Team, EQuidditchRole AssignedRole);
+
+    // Blackboard keys for synchronization state
+    UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Sync")
+    FName MatchStartedKeyName;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Sync")
+    FName ShouldSwapTeamKeyName;
+
+    // Blackboard keys for role/team - set when agent is registered
+    UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Sync")
+    FName QuidditchRoleKeyName;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Sync")
+    FName HasBroomKeyName;
+
+    // Bind/unbind helpers
+    void BindToGameModeEvents();
+    void UnbindFromGameModeEvents();
+
+    // ========================================================================
+    // BROOM COMPONENT SYNC
+    // Keeps Blackboard.IsFlying synced with actual BroomComponent state
+    // ========================================================================
+
+    UFUNCTION()
+    void HandleFlightStateChanged(bool bNewFlightState);
+
+    // ========================================================================
+    // STAGING ZONE LANDING DETECTION (Bee and Flower Pattern)
+    // When agent overlaps a staging zone, verify it's the correct one for
+    // our team/role and notify GameMode. The zone doesn't know about us -
+    // we (the bee) decide if this is the right flower to land on.
+    // ========================================================================
+
+    // Called when pawn overlaps any actor - we filter for staging zones
+    UFUNCTION()
+    void HandlePawnBeginOverlap(AActor* OverlappedActor, AActor* OtherActor);
+
+    // Bind to pawn's overlap events
+    void BindToPawnOverlapEvents();
+    void UnbindFromPawnOverlapEvents();
+
+    // Track if we've already notified GameMode (prevent double-counting)
+    bool bNotifiedStagingZoneArrival;
 };

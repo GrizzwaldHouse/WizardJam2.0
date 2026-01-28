@@ -28,6 +28,7 @@
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Code/Utilities/AC_StaminaComponent.h"
 
 // ============================================================================
 // CONSTRUCTOR
@@ -40,6 +41,11 @@ UBTTask_ControlFlight::UBTTask_ControlFlight()
     , BoostDistanceThreshold(500.0f)
     , VerticalInputMultiplier(1.0f)
     , bDirectFlight(true)
+    , BoostStaminaThreshold(0.4f)
+    , ThrottleStaminaThreshold(0.25f)
+    , LowStaminaMovementScale(0.5f)
+    , bLandWhenStaminaCritical(true)
+    , CriticalStaminaThreshold(0.15f)
 {
     NodeName = "Control Flight";
 
@@ -170,38 +176,155 @@ void UBTTask_ControlFlight::TickTask(
     }
 
     // ========================================================================
-    // BOOST CONTROL - Using the Core API!
+    // STAMINA CHECK - Critical threshold detection
+    // ========================================================================
+
+    float StaminaPercent = GetStaminaPercentage(AIPawn);
+
+    // Handle missing stamina component (error case)
+    if (StaminaPercent < 0.0f)
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("[BTTask_ControlFlight] Cannot determine stamina - aborting flight"));
+        BroomComp->SetBoostEnabled(false);
+        FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+        return;
+    }
+
+    // Check for critical stamina - abort flight and land
+    if (bLandWhenStaminaCritical && StaminaPercent < CriticalStaminaThreshold)
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("[BTTask_ControlFlight] CRITICAL STAMINA (%.0f%%) - Aborting flight!"),
+            StaminaPercent * 100.0f);
+
+        // Disable boost immediately
+        BroomComp->SetBoostEnabled(false);
+
+        // Disable flight (this will trigger landing)
+        BroomComp->SetFlightEnabled(false);
+
+        // Task fails - AI needs to recover stamina
+        FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+        return;
+    }
+
+    // ========================================================================
+    // BOOST CONTROL - With stamina awareness
     // Same function the player's HandleBoostInput calls
     // ========================================================================
 
     float HorizontalDist = FVector::Dist2D(CurrentLocation, TargetLocation);
-    
+
     if (bUseBoostWhenFar)
     {
-        bool bShouldBoost = HorizontalDist > BoostDistanceThreshold;
+        // Boost requires BOTH distance threshold AND sufficient stamina
+        bool bDistanceWantsBoost = HorizontalDist > BoostDistanceThreshold;
+        bool bStaminaAllowsBoost = StaminaPercent >= BoostStaminaThreshold;
+
+        bool bShouldBoost = bDistanceWantsBoost && bStaminaAllowsBoost;
         BroomComp->SetBoostEnabled(bShouldBoost);
-    }
 
-    // ========================================================================
-    // HORIZONTAL MOVEMENT
-    // This uses standard movement input, not broom-specific
-    // CharacterMovementComponent handles forward/strafe in MOVE_Flying mode
-    // ========================================================================
-
-    if (bDirectFlight)
-    {
-        // Move directly toward target in 3D
-        FVector DirectionToTarget = (TargetLocation - CurrentLocation).GetSafeNormal();
-        AIPawn->AddMovementInput(DirectionToTarget, 1.0f);
+        // Log when boost is denied due to stamina
+        if (bDistanceWantsBoost && !bStaminaAllowsBoost)
+        {
+            UE_LOG(LogTemp, Verbose,
+                TEXT("[BTTask_ControlFlight] Boost denied - stamina %.0f%% < threshold %.0f%%"),
+                StaminaPercent * 100.0f, BoostStaminaThreshold * 100.0f);
+        }
     }
     else
     {
-        // Only adjust altitude, let navigation handle horizontal
-        // This mode is for when you want AI to follow paths but fly at correct height
-        FVector HorizontalDirection = (TargetLocation - CurrentLocation);
-        HorizontalDirection.Z = 0.0f;
-        HorizontalDirection.Normalize();
-        AIPawn->AddMovementInput(HorizontalDirection, 1.0f);
+        // Boost disabled by config - ensure it's off
+        BroomComp->SetBoostEnabled(false);
+    }
+
+    // ========================================================================
+    // MOVEMENT SPEED CALCULATION - Throttle based on stamina
+    // ========================================================================
+
+    float MovementScale = 1.0f;
+
+    // Apply throttling when stamina is low (but not critical)
+    if (StaminaPercent < ThrottleStaminaThreshold)
+    {
+        // Interpolate between LowStaminaMovementScale and 1.0 based on stamina
+        // At ThrottleStaminaThreshold: full speed
+        // At CriticalStaminaThreshold: LowStaminaMovementScale
+        float ThrottleRange = ThrottleStaminaThreshold - CriticalStaminaThreshold;
+        if (ThrottleRange > KINDA_SMALL_NUMBER)
+        {
+            float StaminaInRange = StaminaPercent - CriticalStaminaThreshold;
+            float ThrottleAlpha = FMath::Clamp(StaminaInRange / ThrottleRange, 0.0f, 1.0f);
+            MovementScale = FMath::Lerp(LowStaminaMovementScale, 1.0f, ThrottleAlpha);
+        }
+        else
+        {
+            MovementScale = LowStaminaMovementScale;
+        }
+
+        UE_LOG(LogTemp, Verbose,
+            TEXT("[BTTask_ControlFlight] Throttling movement to %.0f%% (stamina: %.0f%%)"),
+            MovementScale * 100.0f, StaminaPercent * 100.0f);
+    }
+
+    // ========================================================================
+    // HORIZONTAL MOVEMENT - Direct velocity control for AI pawns
+    // AddMovementInput requires PlayerController processing, so we directly
+    // set velocity for AI-controlled flight
+    // ========================================================================
+
+    FVector DirectionToTarget;
+    if (bDirectFlight)
+    {
+        // Move directly toward target in 3D with stamina-scaled speed
+        DirectionToTarget = (TargetLocation - CurrentLocation).GetSafeNormal();
+    }
+    else
+    {
+        // Only horizontal movement - vertical handled by SetVerticalInput above
+        DirectionToTarget = (TargetLocation - CurrentLocation);
+        DirectionToTarget.Z = 0.0f;
+        DirectionToTarget.Normalize();
+    }
+
+    // Direct velocity control for AI pawns
+    ACharacter* Character = Cast<ACharacter>(AIPawn);
+    if (Character)
+    {
+        UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement();
+        if (MoveComp && MoveComp->MovementMode == MOVE_Flying)
+        {
+            float TargetSpeed = MoveComp->MaxFlySpeed * MovementScale;
+            FVector DesiredVelocity = DirectionToTarget * TargetSpeed;
+
+            // For bDirectFlight, include Z component; otherwise preserve BroomComponent's Z
+            if (!bDirectFlight)
+            {
+                DesiredVelocity.Z = MoveComp->Velocity.Z;
+            }
+
+            // Direct velocity assignment for AI - instant direction change
+            // VInterpTo causes circular orbits when direction changes rapidly at high speed
+            MoveComp->Velocity = DesiredVelocity;
+        }
+    }
+
+    // ========================================================================
+    // ROTATION CONTROL - Prevents circular/spiral movement
+    // Without this, pawn faces wrong direction while AddMovementInput pushes
+    // toward target, causing spiral paths instead of direct flight
+    // ========================================================================
+    FVector RotationDirection = (TargetLocation - CurrentLocation);
+    RotationDirection.Z = 0.0f;  // Keep rotation on horizontal plane only
+
+    if (!RotationDirection.IsNearlyZero())
+    {
+        RotationDirection.Normalize();
+        FRotator TargetRotation = RotationDirection.Rotation();
+        FRotator CurrentRotation = AIPawn->GetActorRotation();
+        FRotator NewRotation = FMath::RInterpTo(CurrentRotation, TargetRotation, DeltaSeconds, 5.0f);
+        AIPawn->SetActorRotation(NewRotation);
     }
 
     // ========================================================================
@@ -254,6 +377,15 @@ bool UBTTask_ControlFlight::GetTargetLocation(
     {
         // Target is a vector location
         OutLocation = Blackboard->GetValueAsVector(TargetKey.SelectedKeyName);
+
+        // Validate vector is not zero (indicates uninitialized or failed lookup)
+        if (OutLocation.IsNearlyZero())
+        {
+            UE_LOG(LogTemp, Warning,
+                TEXT("[BTTask_ControlFlight] TargetLocation is zero/unset - check staging zone registration"));
+            return false;
+        }
+
         return true;
     }
 
@@ -274,12 +406,27 @@ FString UBTTask_ControlFlight::GetStaticDescription() const
 
     if (bUseBoostWhenFar)
     {
-        Description += FString::Printf(TEXT("\nBoost when >%.0f away"), BoostDistanceThreshold);
+        Description += FString::Printf(
+            TEXT("\nBoost when >%.0f away (need %.0f%% stamina)"),
+            BoostDistanceThreshold,
+            BoostStaminaThreshold * 100.0f);
     }
 
     if (bDirectFlight)
     {
         Description += TEXT("\nDirect 3D flight");
+    }
+
+    // Add stamina threshold info
+    Description += FString::Printf(
+        TEXT("\nThrottle below %.0f%% stamina"),
+        ThrottleStaminaThreshold * 100.0f);
+
+    if (bLandWhenStaminaCritical)
+    {
+        Description += FString::Printf(
+            TEXT("\nAuto-land below %.0f%% stamina"),
+            CriticalStaminaThreshold * 100.0f);
     }
 
     return Description;
@@ -299,4 +446,30 @@ void UBTTask_ControlFlight::InitializeFromAsset(UBehaviorTree& Asset)
     {
         TargetKey.ResolveSelectedKey(*BBAsset);
     }
+}
+
+// ============================================================================
+// STAMINA HELPER
+// ============================================================================
+
+float UBTTask_ControlFlight::GetStaminaPercentage(APawn* Pawn) const
+{
+    if (!Pawn)
+    {
+        return -1.0f;
+    }
+
+    // Try to find AC_StaminaComponent on the pawn
+    UAC_StaminaComponent* StaminaComp =
+        Pawn->FindComponentByClass<UAC_StaminaComponent>();
+
+    if (!StaminaComp)
+    {
+        UE_LOG(LogTemp, Warning,
+            TEXT("[BTTask_ControlFlight] Pawn %s has no AC_StaminaComponent!"),
+            *Pawn->GetName());
+        return -1.0f;
+    }
+
+    return StaminaComp->GetStaminaPercent();
 }

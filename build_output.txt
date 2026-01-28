@@ -1,0 +1,9 @@
+Using bundled DotNet SDK version: 6.0.302
+Running UnrealBuildTool: dotnet "..\..\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.dll" WizardJam2Editor Win64 Development -Project=C:\Users\daley\UnrealProjects\BaseGame\WizardJam2.0.uproject -WaitMutex -FromMsBuild
+Log file: C:\Users\daley\AppData\Local\UnrealBuildTool\Log.txt
+Using 'git status' to determine working set for adaptive non-unity build (C:\Users\daley\UnrealProjects\BaseGame).
+Creating makefile for WizardJam2Editor (no existing makefile)
+Total execution time: 0.36 seconds
+Couldn't find target rules file for target 'WizardJam2Editor' in rules assembly 'UE5Rules, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+Location: C:\Program Files\Epic Games\UE_5.4\Engine\Intermediate\Build\BuildRules\UE5Rules.dll
+

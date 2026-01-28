@@ -1,0 +1,29 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0.0",
+	"FriendlyName": "Structured Logging",
+	"Description": "Production-quality structured logging system with JSON output, async file writing, and AI-analyzable session management. Provides persistent, searchable logs alongside native UE_LOG for debugging silent failures and complex state machines.",
+	"Category": "Developer Tools",
+	"CreatedBy": "Marcus Daley",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "StructuredLogging",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"WhitelistPlatforms": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
+		}
+	]
+}

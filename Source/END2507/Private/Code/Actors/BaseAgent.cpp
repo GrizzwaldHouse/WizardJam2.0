@@ -3,29 +3,69 @@
 
 #include "Code/Actors/BaseAgent.h"
 #include "Code/AC_HealthComponent.h"
+#include "Code/Utilities/AC_StaminaComponent.h"
 #include "AIController.h"
 #include "Code/Actors/AIC_CodeBaseAgentController.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Components/CapsuleComponent.h" 
+#include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Code/Actors/BaseRifle.h"
+#include "Code/Quidditch/QuidditchAgentData.h"
 #include "../END2507.h"
 
 // Logging category for this class
 DEFINE_LOG_CATEGORY_STATIC(LogCodeAgent, Log, All);
 ABaseAgent::ABaseAgent()
+	// ========================================================================
+	// INITIALIZATION ORDER: Must match declaration order in header (protected section)
+	// ========================================================================
+	: AgentColor(FLinearColor::Red)
+	, MaterialParameterName(TEXT("Tint"))
+	, PlacedAgentFactionID(1)  // Enemy team
+	, PlacedAgentFactionColor(FLinearColor::Red)
+	, PlacedQuidditchTeam(EQuidditchTeam::TeamA)
+	, PlacedPreferredRole(EQuidditchRole::Seeker)
+	, AgentDataAsset(nullptr)
+	, CachedTeamId(FGenericTeamId(1))  // Match PlacedAgentFactionID
+	, StaminaComponent(nullptr)
 {
 	PrimaryActorTick.bCanEverTick = true;
-	//Set default values for the agent appearance and behavior
-	AgentColor = FLinearColor::Red;
-	MaterialParameterName = TEXT("Tint");
-	PlacedAgentFactionID = 1;  // Enemy team
-	PlacedAgentFactionColor = FLinearColor::Red;
-	// Initialize cached team ID from placed faction (will be updated in OnFactionAssigned)
-	CachedTeamId = FGenericTeamId(static_cast<uint8>(PlacedAgentFactionID));
 	//Configure AI possession
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	// ========================================================================
+	// FLIGHT SUPPORT - Create stamina component for AI broom flight
+	// Without this, AC_BroomComponent immediately force-dismounts on first tick
+	// ========================================================================
+	StaminaComponent = CreateDefaultSubobject<UAC_StaminaComponent>(TEXT("StaminaComponent"));
+}
+
+// ============================================================================
+// QUIDDITCH CONFIGURATION GETTERS
+// Data asset is PRIMARY source; falls back to manual properties if not set
+// ============================================================================
+
+EQuidditchTeam ABaseAgent::GetQuidditchTeam() const
+{
+	// Data asset is PRIMARY source
+	if (AgentDataAsset)
+	{
+		return AgentDataAsset->TeamAffiliation;
+	}
+	// Fallback to manual property set per-instance
+	return PlacedQuidditchTeam;
+}
+
+EQuidditchRole ABaseAgent::GetPreferredQuidditchRole() const
+{
+	// Data asset is PRIMARY source
+	if (AgentDataAsset)
+	{
+		return AgentDataAsset->AgentRole;
+	}
+	// Fallback to manual property set per-instance
+	return PlacedPreferredRole;
 }
 
 void ABaseAgent::EnemyAttack(AActor* Target)

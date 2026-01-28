@@ -1,0 +1,192 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Structured Logging Channel Definitions",
+  "description": "Standard channel/category definitions for Unreal Engine Structured Logging. Channels group related events for filtering and analysis.",
+  "standard_channels": {
+    "AI": {
+      "description": "AI controller lifecycle, behavior tree execution, decision-making",
+      "example_events": [
+        "ControllerPossessed",
+        "BehaviorTreeStarted",
+        "BehaviorTreeStopped",
+        "FlightTargetSet",
+        "NavigationFailed"
+      ],
+      "use_cases": [
+        "Debug why AI doesn't respond to game state changes",
+        "Trace AI decision-making sequence",
+        "Diagnose behavior tree node execution order"
+      ]
+    },
+    "Perception": {
+      "description": "AI perception events (sight, hearing, stimulus detection)",
+      "example_events": [
+        "ActorPerceived",
+        "ActorLost",
+        "StimulusEvaluated",
+        "SenseConfigurationChanged"
+      ],
+      "use_cases": [
+        "Debug why AI doesn't see collectibles",
+        "Analyze perception range and FOV effectiveness",
+        "Trace team affiliation filtering"
+      ]
+    },
+    "Blackboard": {
+      "description": "Blackboard key reads, writes, initialization",
+      "example_events": [
+        "BlackboardKeySet",
+        "BlackboardKeyCleared",
+        "BlackboardKeyNotSet",
+        "KeyResolutionFailed"
+      ],
+      "use_cases": [
+        "Diagnose FBlackboardKeySelector initialization failures",
+        "Trace key value changes over time",
+        "Identify which service/task modified a key"
+      ]
+    },
+    "Flight": {
+      "description": "Broom flight mechanics, stamina, velocity control",
+      "example_events": [
+        "BroomMounted",
+        "BroomDismounted",
+        "StaminaChanged",
+        "BoostActivated",
+        "ForcedDismount"
+      ],
+      "use_cases": [
+        "Debug stamina synchronization between player and AI",
+        "Analyze vertical velocity calculations",
+        "Trace forced dismount conditions"
+      ]
+    },
+    "GameMode": {
+      "description": "Game mode state machine, match flow, agent registration",
+      "example_events": [
+        "MatchStateChanged",
+        "AgentRegistered",
+        "CountdownStarted",
+        "CountdownTick",
+        "MatchStarted"
+      ],
+      "use_cases": [
+        "Debug match synchronization issues",
+        "Trace agent ready count mismatches",
+        "Analyze state transition timing"
+      ]
+    },
+    "Synchronization": {
+      "description": "Cross-system communication, delegate binding, observer pattern events",
+      "example_events": [
+        "DelegateBindingFailed",
+        "DelegateBroadcast",
+        "ListenerRegistered",
+        "EventReceived"
+      ],
+      "use_cases": [
+        "Debug why controllers don't respond to game mode events",
+        "Trace delegate execution order",
+        "Identify missing event listeners"
+      ]
+    },
+    "Collectibles": {
+      "description": "Pickup interactions, channel requirements, inventory changes",
+      "example_events": [
+        "CollectibleSpawned",
+        "PickupAttempted",
+        "ChannelCheckFailed",
+        "CollectibleCollected"
+      ],
+      "use_cases": [
+        "Debug why AI can't collect items",
+        "Trace channel validation logic",
+        "Analyze pickup interaction range"
+      ]
+    },
+    "BroomComponent": {
+      "description": "Broom component lifecycle, input handling, physics",
+      "example_events": [
+        "ComponentInitialized",
+        "InputBindingFailed",
+        "PhysicsStateChanged",
+        "CollisionDetected"
+      ],
+      "use_cases": [
+        "Debug component initialization order",
+        "Trace input event handling",
+        "Analyze physics simulation issues"
+      ]
+    },
+    "UI": {
+      "description": "Widget lifecycle, delegate binding, HUD updates",
+      "example_events": [
+        "WidgetConstructed",
+        "DelegateBindingAttempted",
+        "HUDUpdated",
+        "ButtonClicked"
+      ],
+      "use_cases": [
+        "Debug UI not updating when game state changes",
+        "Trace widget construction order",
+        "Identify missing delegate bindings"
+      ]
+    },
+    "Interaction": {
+      "description": "IInteractable interface events, proximity checks",
+      "example_events": [
+        "InteractionAttempted",
+        "DistanceCheckFailed",
+        "InteractionSucceeded",
+        "InteractionDenied"
+      ],
+      "use_cases": [
+        "Debug why interactions fail silently",
+        "Trace interaction validation logic",
+        "Analyze proximity thresholds"
+      ]
+    },
+    "Match": {
+      "description": "Quidditch match-specific events (goals, team swaps, scoring)",
+      "example_events": [
+        "GoalScored",
+        "TeamSwapped",
+        "SnitchCaught",
+        "MatchEnded"
+      ],
+      "use_cases": [
+        "Analyze match flow and timing",
+        "Debug scoring logic",
+        "Trace team assignment changes"
+      ]
+    }
+  },
+  "custom_channels": {
+    "description": "Projects can define custom channels in DefaultStructuredLogging.ini",
+    "format": "+ChannelVerbosities=(Channel=\"YourChannelName\",Verbosity=Display)",
+    "naming_convention": "PascalCase, descriptive system/feature names",
+    "examples": [
+      "SpellCasting",
+      "NetworkReplication",
+      "SaveSystem",
+      "AchievementTracking"
+    ]
+  },
+  "channel_best_practices": {
+    "granularity": [
+      "Channels should represent logical systems, not individual classes",
+      "Group related functionality (e.g., all AI perception events in 'Perception')",
+      "Avoid over-fragmentation (don't create a channel per actor class)"
+    ],
+    "filtering": [
+      "Use focus mode to capture multiple related channels during testing",
+      "Set per-channel verbosity to reduce noise (e.g., AI=Display, UI=Warning)",
+      "Disable verbose channels in config unless actively debugging"
+    ],
+    "naming": [
+      "Use clear, descriptive names (Perception, not Percep or P)",
+      "Match existing UE_LOG categories where applicable for consistency",
+      "Avoid abbreviations unless widely recognized in the codebase"
+    ]
+  }
+}

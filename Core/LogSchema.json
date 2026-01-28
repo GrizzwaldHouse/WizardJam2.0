@@ -1,0 +1,135 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Structured Log Entry Schema",
+  "description": "Schema definition for Unreal Engine Structured Logging plugin log entries. Each log entry is a single JSON object written as one line in .jsonl files.",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "session_guid",
+    "event_name",
+    "channel",
+    "verbosity",
+    "context"
+  ],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp with milliseconds (UTC). Example: 2026-01-25T14:23:45.123Z"
+    },
+    "session_guid": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the game session. All logs from the same PIE/standalone session share this GUID."
+    },
+    "event_name": {
+      "type": "string",
+      "pattern": "^[A-Z][a-zA-Z0-9]*$",
+      "description": "PascalCase event name describing what happened. Examples: BroomMounted, BlackboardKeyNotSet, ActorPerceived"
+    },
+    "channel": {
+      "type": "string",
+      "description": "System/feature channel name. Examples: AI, Perception, BroomComponent, GameMode"
+    },
+    "verbosity": {
+      "type": "string",
+      "enum": ["Display", "Warning", "Error", "Fatal", "Verbose"],
+      "description": "Log verbosity level. Display=normal events, Warning=recoverable issues, Error=critical failures"
+    },
+    "context": {
+      "type": "object",
+      "description": "Auto-populated context about where the log occurred",
+      "properties": {
+        "actor": {
+          "type": ["string", "null"],
+          "description": "Name of the actor that logged this event (e.g., BP_QuidditchAgent_C_3)"
+        },
+        "actor_class": {
+          "type": ["string", "null"],
+          "description": "Class name of the actor (e.g., BP_QuidditchAgent_C)"
+        },
+        "world": {
+          "type": ["string", "null"],
+          "description": "World/level name (e.g., SpawnerLevel, MainMenu)"
+        },
+        "subsystem": {
+          "type": ["string", "null"],
+          "description": "Subsystem name if logged from a subsystem (e.g., ElementDatabaseSubsystem)"
+        },
+        "source_file": {
+          "type": ["string", "null"],
+          "description": "Source file path (C++ only, populated via __FILE__ macro)"
+        },
+        "source_line": {
+          "type": ["integer", "null"],
+          "description": "Line number in source file (C++ only, populated via __LINE__ macro)"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "User-provided key-value pairs. All values are strings for JSON compatibility.",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "examples": [
+        {
+          "stamina": "85.0",
+          "broom_type": "Combat",
+          "mount_duration_ms": "0.125"
+        },
+        {
+          "key_name": "TargetLocation",
+          "blackboard_asset": "BB_QuidditchAgent",
+          "is_set": "false"
+        }
+      ]
+    },
+    "callstack_hash": {
+      "type": ["string", "null"],
+      "description": "Optional hash of the callstack for grouping similar errors (future enhancement)"
+    }
+  },
+  "examples": [
+    {
+      "timestamp": "2026-01-25T14:23:45.123Z",
+      "session_guid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "event_name": "BroomMounted",
+      "channel": "BroomComponent",
+      "verbosity": "Display",
+      "context": {
+        "actor": "BP_QuidditchAgent_C_3",
+        "actor_class": "BP_QuidditchAgent_C",
+        "world": "SpawnerLevel",
+        "subsystem": null,
+        "source_file": "AC_BroomComponent.cpp",
+        "source_line": 142
+      },
+      "metadata": {
+        "stamina": "85.0",
+        "broom_type": "Combat",
+        "mount_duration_ms": "0.125"
+      }
+    },
+    {
+      "timestamp": "2026-01-25T14:23:46.789Z",
+      "session_guid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "event_name": "BlackboardKeyNotSet",
+      "channel": "AI",
+      "verbosity": "Error",
+      "context": {
+        "actor": "AIC_QuidditchController_2",
+        "actor_class": "AIC_QuidditchController_C",
+        "world": "SpawnerLevel",
+        "subsystem": null,
+        "source_file": "BTService_FindCollectible.cpp",
+        "source_line": 67
+      },
+      "metadata": {
+        "key_name": "PerceivedCollectible",
+        "node_name": "BTService_FindCollectible",
+        "blackboard_asset": "BB_QuidditchAgent"
+      }
+    }
+  ]
+}

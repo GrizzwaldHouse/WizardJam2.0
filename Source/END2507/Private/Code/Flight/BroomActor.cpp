@@ -45,6 +45,11 @@ ABroomActor::ABroomActor()
     BroomMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
     BroomMesh->SetCollisionResponseToAllChannels(ECR_Overlap);
 
+    // Create visual mesh as child of root
+    // Designer assigns SM_Broom_Combat here and adjusts transform
+    BroomVisual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BroomVisual"));
+    BroomVisual->SetupAttachment(RootComponent);
+
     // Create perception component so AI can detect this broom
     PerceptionSource = CreateDefaultSubobject<UAIPerceptionStimuliSourceComponent>(TEXT("PerceptionSource"));
 }

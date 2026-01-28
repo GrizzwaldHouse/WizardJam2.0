@@ -145,9 +145,14 @@ protected:
     // COMPONENTS
     // ========================================================================
 
-    // Root component - the broom mesh that gets attached to player
+    // Root component - collision/attachment anchor (leave mesh empty)
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     UStaticMeshComponent* BroomMesh;
+
+    // Visual mesh component - designers assign static mesh and adjust transform here
+    // Separated from root to allow independent transform adjustment
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UStaticMeshComponent* BroomVisual;
 
     // AI Perception component so AI agents can detect this broom
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")

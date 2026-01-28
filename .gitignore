@@ -123,4 +123,37 @@ Plugins/**/Intermediate/
 # Large external project files for AI agent development reference
 # -----------------------------------------------------------------------------
 Artificial-Intelligence/
-/nul
+
+# -----------------------------------------------------------------------------
+# PROJECT DOCUMENTATION - Design docs, guides, planning materials
+# Not needed in version control, local reference only
+# -----------------------------------------------------------------------------
+Docs/
+
+# -----------------------------------------------------------------------------
+# WIZARDJAM MIGRATION STAGING - Assets pending migration
+# Contains HUD, Quidditch assets, and other content to be migrated
+# These are staging files, not final project content
+# -----------------------------------------------------------------------------
+WizardJam/
+
+# -----------------------------------------------------------------------------
+# PLUGIN LOCAL DATA - Developer productivity tracking
+# Machine-specific metrics and local data
+# -----------------------------------------------------------------------------
+Plugins/DeveloperProductivityTracker/productivity_local/
+
+# -----------------------------------------------------------------------------
+# AI / CLAUDE DOCUMENTATION - Private development assistance
+# -----------------------------------------------------------------------------
+Documents/
+.claude/
+claude.md
+.ai/
+.llm/
+
+# -----------------------------------------------------------------------------
+# DOCUMENTATION - Setup guides and reference materials
+# Local development documentation, not needed in version control
+# -----------------------------------------------------------------------------
+Documentation/

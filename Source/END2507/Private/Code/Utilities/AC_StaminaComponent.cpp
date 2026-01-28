@@ -47,8 +47,8 @@ void UAC_StaminaComponent::BeginPlay()
         OnStaminaChanged.Broadcast(OwnerActor, CurrentStamina, 0.0f);
     }
 
-    UE_LOG(LogStaminaComponent, Display, TEXT("[%s] StaminaComponent ready: %.0f/%.0f | RegenRate: %.0f | DrainRate: %.0f"),
-        *GetNameSafe(OwnerActor), CurrentStamina, MaxStamina, StaminaRegenRate, StaminaDrainRate);
+   /* UE_LOG(LogStaminaComponent, Display, TEXT("[%s] StaminaComponent ready: %.0f/%.0f | RegenRate: %.0f | DrainRate: %.0f"),
+        *GetNameSafe(OwnerActor), CurrentStamina, MaxStamina, StaminaRegenRate, StaminaDrainRate);*/
 }
 
 void UAC_StaminaComponent::TickComponent(float DeltaTime, ELevelTick TickType,
@@ -66,8 +66,8 @@ void UAC_StaminaComponent::TickComponent(float DeltaTime, ELevelTick TickType,
         if (CurrentStamina <= 0.0f)
         {
             bIsSprinting = false;
-            UE_LOG(LogStaminaComponent, Display, TEXT("[%s] Sprint stopped - stamina depleted"),
-                *GetNameSafe(OwnerActor));
+          /*  UE_LOG(LogStaminaComponent, Display, TEXT("[%s] Sprint stopped - stamina depleted"),
+                *GetNameSafe(OwnerActor));*/
         }
 
         // Reset regen delay timer
@@ -163,8 +163,13 @@ bool UAC_StaminaComponent::ConsumeStamina(float Amount)
     ApplyStaminaChange(-Amount);
     RegenDelayTimer = RegenDelay; // Reset regen delay
 
-    UE_LOG(LogStaminaComponent, Display, TEXT("[%s] Consumed %.0f stamina | Remaining: %.0f/%.0f"),
-        *GetNameSafe(OwnerActor), Amount, CurrentStamina, MaxStamina);
+    // Only log significant consumption (>= 5.0) to reduce spam from per-tick drain
+    // Per-tick drain is typically 0.25-0.5 stamina, so 5.0 filters out tick spam
+    if (Amount >= 5.0f)
+    {
+        UE_LOG(LogStaminaComponent, Display, TEXT("[%s] Consumed %.0f stamina | Remaining: %.0f/%.0f"),
+            *GetNameSafe(OwnerActor), Amount, CurrentStamina, MaxStamina);
+    }
 
     return true;
 }

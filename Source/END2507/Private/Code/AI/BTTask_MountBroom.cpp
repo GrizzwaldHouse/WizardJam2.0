@@ -19,7 +19,9 @@
 #include "Code/AI/BTTask_MountBroom.h"
 #include "Code/Flight/AC_BroomComponent.h"
 #include "AIController.h"
+#include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "BehaviorTree/Blackboard/BlackboardKeyType_Bool.h"
 #include "GameFramework/Character.h"
 
 // ============================================================================
@@ -30,9 +32,29 @@ UBTTask_MountBroom::UBTTask_MountBroom()
     : bMountBroom(true)
 {
     NodeName = "Mount/Dismount Broom";
-    
+
     // This task completes immediately (instant action)
     bNotifyTick = false;
+
+    // CRITICAL: Add filter so editor knows FlightStateKey expects a Bool type
+    // Without this, the editor shows all key types and writes may silently fail
+    FlightStateKey.AddBoolFilter(this,
+        GET_MEMBER_NAME_CHECKED(UBTTask_MountBroom, FlightStateKey));
+}
+
+// ============================================================================
+// INITIALIZE FROM ASSET
+// Required for FBlackboardKeySelector runtime resolution
+// ============================================================================
+
+void UBTTask_MountBroom::InitializeFromAsset(UBehaviorTree& Asset)
+{
+    Super::InitializeFromAsset(Asset);
+
+    if (UBlackboardData* BBAsset = GetBlackboardAsset())
+    {
+        FlightStateKey.ResolveSelectedKey(*BBAsset);
+    }
 }
 
 // ============================================================================
@@ -84,18 +106,36 @@ EBTNodeResult::Type UBTTask_MountBroom::ExecuteTask(
 
     if (bSuccess)
     {
-        UE_LOG(LogTemp, Display, 
+        UE_LOG(LogTemp, Display,
             TEXT("[BTTask_MountBroom] '%s' successfully %s broom"),
             *AIPawn->GetName(),
             bMountBroom ? TEXT("mounted") : TEXT("dismounted"));
 
-        // Optionally update blackboard with flight state
-        if (FlightStateKey.IsSet())
+        // ALWAYS update blackboard with flight state and HasBroom
+        // This is a direct write that bypasses delegate binding issues
+        UBlackboardComponent* Blackboard = OwnerComp.GetBlackboardComponent();
+        if (Blackboard)
         {
-            UBlackboardComponent* Blackboard = OwnerComp.GetBlackboardComponent();
-            if (Blackboard)
+            // Write IsFlying - uses FlightStateKey if set, otherwise hardcoded key
+            if (FlightStateKey.IsSet())
             {
                 Blackboard->SetValueAsBool(FlightStateKey.SelectedKeyName, bIsNowFlying);
+            }
+            else
+            {
+                // Fallback: Always write to IsFlying key directly
+                Blackboard->SetValueAsBool(FName("IsFlying"), bIsNowFlying);
+            }
+
+            // CRITICAL FIX: Always write HasBroom = true when mounting succeeds
+            // This fixes the silent failure where delegate binding wasn't syncing state
+            if (bMountBroom && bIsNowFlying)
+            {
+                Blackboard->SetValueAsBool(FName("HasBroom"), true);
+                UE_LOG(LogTemp, Display,
+                    TEXT("[BTTask_MountBroom] '%s' -> BB.IsFlying=%s, BB.HasBroom=true"),
+                    *AIPawn->GetName(),
+                    bIsNowFlying ? TEXT("true") : TEXT("false"));
             }
         }
 

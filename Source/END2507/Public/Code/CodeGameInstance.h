@@ -24,6 +24,11 @@ public:
 	//Loads the Game level
 	UFUNCTION(BlueprintCallable, Category = "Level")
 	void LoadGameLevel();
+
+	// Loads the Quidditch level
+	UFUNCTION(BlueprintCallable, Category = "Level")
+	void LoadQuidditchLevel();
+
 	//Loads the current level safely
 	UFUNCTION(BlueprintCallable, Category = "Level")
 	void LoadCurrentLevelSafe();
@@ -35,5 +40,6 @@ public:
 private:
 	const FName MainMenuLevelName = FName(TEXT("CodeMainMenu"));
 	const FName FirstGameLevelName = FName(TEXT("CodeTestingMap"));
+	const FName QuidditchLevelName = FName(TEXT("QuidditchLevel"));
 
 };

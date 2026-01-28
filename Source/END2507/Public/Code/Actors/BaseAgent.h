@@ -8,10 +8,13 @@
 #include "Code/IEnemyInterface.h"
 #include "Code/CodeFactionInterface.h"
 #include "GenericTeamAgentInterface.h"
+#include "Code/Quidditch/QuidditchTypes.h"
 #include "BaseAgent.generated.h"
 
 class UMaterialInstanceDynamic;
 class ABaseRifle;
+class UQuidditchAgentData;
+class UAC_StaminaComponent;
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAIShootDelegate);
 
 UCLASS()
@@ -37,6 +40,24 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Faction")
 	FLinearColor GetPlacedFactionColor() const { return PlacedAgentFactionColor; }
 
+	// ========================================================================
+	// QUIDDITCH CONFIGURATION
+	// Data asset is PRIMARY source; falls back to manual properties if not set
+	// Controller reads these at OnPossess and registers with GameMode
+	// ========================================================================
+
+	// Returns team from data asset (if set) or PlacedQuidditchTeam (fallback)
+	UFUNCTION(BlueprintPure, Category = "Quidditch")
+	EQuidditchTeam GetQuidditchTeam() const;
+
+	// Returns role from data asset (if set) or PlacedPreferredRole (fallback)
+	UFUNCTION(BlueprintPure, Category = "Quidditch")
+	EQuidditchRole GetPreferredQuidditchRole() const;
+
+	// Returns the assigned data asset (may be null)
+	UFUNCTION(BlueprintPure, Category = "Quidditch")
+	UQuidditchAgentData* GetAgentDataAsset() const { return AgentDataAsset; }
+
 	virtual void OnFactionAssigned_Implementation(int32 FactionID, const FLinearColor& FactionColor) override;
 	virtual FGenericTeamId GetGenericTeamId() const override;
 	virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override;
@@ -59,9 +80,47 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Faction")
 	FLinearColor PlacedAgentFactionColor;
 
+	// ========================================================================
+	// QUIDDITCH CONFIGURATION - Set per-instance in level
+	// Level designer selects team and preferred role for each placed agent
+	// Controller reads these at possess time
+	// ========================================================================
+
+	// Which Quidditch team this agent belongs to (set per-instance in level)
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Quidditch")
+	EQuidditchTeam PlacedQuidditchTeam;
+
+	// Preferred Quidditch role (GameMode may assign different if slot is full)
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Quidditch")
+	EQuidditchRole PlacedPreferredRole;
+
+	// ========================================================================
+	// DATA ASSET - PRIMARY configuration source
+	// If assigned, Team/Role are read from this asset (overrides manual props)
+	// If not assigned, uses PlacedQuidditchTeam/PlacedPreferredRole as fallback
+	// ========================================================================
+
+	// Primary data asset for this agent - designer assigns in level
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Quidditch")
+	TObjectPtr<UQuidditchAgentData> AgentDataAsset;
+
 	// Cached team ID - stored locally as backup when controller isn't ready
 	// or when controller type doesn't match expected cast
 	FGenericTeamId CachedTeamId;
+
+	// ========================================================================
+	// FLIGHT SUPPORT - Required for AI broom flight
+	// ========================================================================
+
+	// Stamina component for flight (required by AC_BroomComponent)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UAC_StaminaComponent> StaminaComponent;
+
+public:
+	// Getter for stamina component (used by BroomComponent)
+	UFUNCTION(BlueprintPure, Category = "Agent|Stamina")
+	UAC_StaminaComponent* GetStaminaComponent() const { return StaminaComponent; }
+
 private:
 
 

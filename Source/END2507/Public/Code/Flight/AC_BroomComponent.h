@@ -63,6 +63,10 @@ public:
     UFUNCTION(BlueprintPure, Category = "Broom")
     bool IsBoosting() const { return bIsBoosting; }
 
+    // Get current flight speed (base or boosted)
+    UFUNCTION(BlueprintPure, Category = "Broom")
+    float GetCurrentSpeed() const { return bIsBoosting ? BoostSpeed : FlySpeed; }
+
     // Get stamina as percentage (0.0 - 1.0) for HUD display
     UFUNCTION(BlueprintPure, Category = "Broom")
     float GetFlightStaminaPercent() const;

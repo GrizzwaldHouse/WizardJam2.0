@@ -19,6 +19,8 @@
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Object.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Code/Interfaces/Interactable.h"
+#include "Code/Flight/BroomActor.h"
+#include "Code/Flight/AC_BroomComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFindInteractable, Log, All);
 
@@ -75,6 +77,20 @@ void UBTService_FindInteractable::TickNode(UBehaviorTreeComponent& OwnerComp, ui
         return;
     }
 
+    // Skip searching for interactables (like brooms) if the agent is already flying
+    // This prevents the AI from looking for brooms when it already has one
+    UAC_BroomComponent* BroomComp = Pawn->FindComponentByClass<UAC_BroomComponent>();
+    if (BroomComp && BroomComp->IsFlying())
+    {
+        // Agent is flying - clear the output key since we don't need another interactable
+        UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
+        if (BB && OutputKey.IsSet())
+        {
+            BB->SetValueAsObject(OutputKey.SelectedKeyName, nullptr);
+        }
+        return;
+    }
+
     UAIPerceptionComponent* Perception = AIC->GetPerceptionComponent();
     if (!Perception)
     {
@@ -112,6 +128,15 @@ void UBTService_FindInteractable::TickNode(UBehaviorTreeComponent& OwnerComp, ui
         {
             bool bCanInteract = IInteractable::Execute_CanInteract(Actor);
             if (!bCanInteract)
+            {
+                continue;
+            }
+        }
+
+        // Skip brooms that are already being ridden (prevents spam logging mounted brooms)
+        if (ABroomActor* Broom = Cast<ABroomActor>(Actor))
+        {
+            if (Broom->IsBeingRidden())
             {
                 continue;
             }

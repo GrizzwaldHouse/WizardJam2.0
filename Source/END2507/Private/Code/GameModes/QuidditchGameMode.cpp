@@ -6,7 +6,12 @@
 // ============================================================================
 
 #include "Code/GameModes/QuidditchGameMode.h"
+#include "Code/Actors/WizardPlayer.h"
+#include "Code/Actors/WorldSignalEmitter.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/HUD.h"
+#include "StructuredLoggingMacros.h"
+#include "StructuredLoggingSubsystem.h"
 
 DEFINE_LOG_CATEGORY(LogQuidditchGameMode);
 
@@ -17,19 +22,53 @@ AQuidditchGameMode::AQuidditchGameMode()
     , MaxChasersPerTeam(3)
     , MaxBeatersPerTeam(2)
     , MaxKeepersPerTeam(1)
+    , TeamAColor(FLinearColor::Red)      // Default Team A color
+    , TeamBColor(FLinearColor::Blue)     // Default Team B color
     , TeamAScore(0)
     , TeamBScore(0)
     , bSnitchCaught(false)
+    , MatchState(EQuidditchMatchState::Initializing)
+    , AgentsReadyCount(0)
+    , RequiredAgentCount(0)
+    , MatchStartCountdown(3.0f)
+    , CountdownSecondsRemaining(0)
 {
+    // DefaultPawnClass intentionally NOT set here - let Blueprint configure it
+    // BP_QuidditchGameMode should set DefaultPawnClass = BP_CodeWizardPlayer
+    // The Blueprint child has all input, mesh, HUD, and broom configuration
+    // Setting AWizardPlayer::StaticClass() here spawns the raw C++ class which
+    // has no input bindings, no mesh, and no HUD widgets configured
 }
 
 void AQuidditchGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
+    // ========================================================================
+    // SPAWN DEBUG LOGGING - Diagnose player spawn issue
+    // ========================================================================
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT(""));
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("=== SPAWN DEBUG START ==="));
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("GameMode Class: %s"), *GetClass()->GetName());
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("DefaultPawnClass: %s"),
+        DefaultPawnClass ? *DefaultPawnClass->GetName() : TEXT("NULL! <- THIS IS THE BUG"));
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("HUDClass: %s"),
+        HUDClass ? *HUDClass->GetName() : TEXT("NULL (expected)"));
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("PlayerControllerClass: %s"),
+        PlayerControllerClass ? *PlayerControllerClass->GetName() : TEXT("Default APlayerController"));
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("=== SPAWN DEBUG END ==="));
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT(""));
+
+    // Calculate required agents based on team composition
+    // Each team: 1 Seeker + 3 Chasers + 2 Beaters + 1 Keeper = 7 per team
+    RequiredAgentCount = 2 * (MaxSeekersPerTeam + MaxChasersPerTeam + MaxBeatersPerTeam + MaxKeepersPerTeam);
+
     UE_LOG(LogQuidditchGameMode, Display,
-        TEXT("[QuidditchGameMode] Match started | Snitch=%d pts | Goal=%d pts"),
-        SnitchCatchPoints, QuaffleGoalPoints);
+        TEXT("[QuidditchGameMode] Match initialized | Snitch=%d pts | Goal=%d pts | RequiredAgents=%d"),
+        SnitchCatchPoints, QuaffleGoalPoints, RequiredAgentCount);
+
+    // Start in Initializing state
+    TransitionToState(EQuidditchMatchState::Initializing);
 }
 
 // ============================================================================
@@ -115,6 +154,16 @@ int32 AQuidditchGameMode::GetTeamScore(EQuidditchTeam Team) const
     case EQuidditchTeam::TeamA: return TeamAScore;
     case EQuidditchTeam::TeamB: return TeamBScore;
     default: return 0;
+    }
+}
+
+FLinearColor AQuidditchGameMode::GetTeamColor(EQuidditchTeam Team) const
+{
+    switch (Team)
+    {
+    case EQuidditchTeam::TeamA: return TeamAColor;
+    case EQuidditchTeam::TeamB: return TeamBColor;
+    default: return FLinearColor::White;
     }
 }
 
@@ -271,6 +320,9 @@ void AQuidditchGameMode::NotifySnitchCaught(APawn* CatchingSeeker, EQuidditchTea
 
     OnSnitchCaught.Broadcast(CatchingSeeker, Winner);
 
+    // Emit WorldSignal for match end (ball cleanup, etc.)
+    EmitWorldSignal(SignalTypeNames::QuidditchMatchEnd);
+
     // End match
     FString Reason = FString::Printf(TEXT("Snitch caught! Final: %d - %d"), TeamAScore, TeamBScore);
     EndMatch(Winner == EQuidditchTeam::TeamA, Reason);  // Assuming player is Team A
@@ -354,4 +406,427 @@ const FQuidditchAgentInfo* AQuidditchGameMode::FindAgentInfo(APawn* Agent) const
         }
     }
     return nullptr;
+}
+
+// ============================================================================
+// SYNCHRONIZATION - Gas Station Pattern Implementation
+// ============================================================================
+
+void AQuidditchGameMode::TransitionToState(EQuidditchMatchState NewState)
+{
+    if (MatchState == NewState)
+    {
+        return;
+    }
+
+    EQuidditchMatchState OldState = MatchState;
+    MatchState = NewState;
+
+    UE_LOG(LogQuidditchGameMode, Display,
+        TEXT("[QuidditchGameMode] State: %s -> %s"),
+        *UEnum::GetValueAsString(OldState),
+        *UEnum::GetValueAsString(NewState));
+
+    // Broadcast state change - controllers and HUD listen
+    OnMatchStateChanged.Broadcast(OldState, NewState);
+}
+
+void AQuidditchGameMode::HandleAgentReachedStagingZone(APawn* Agent)
+{
+    if (!Agent)
+    {
+        return;
+    }
+
+    // Prevent double-counting
+    TWeakObjectPtr<APawn> WeakAgent(Agent);
+    if (ReadyAgents.Contains(WeakAgent))
+    {
+        return;
+    }
+
+    // Verify agent is registered
+    const FQuidditchAgentInfo* Info = FindAgentInfo(Agent);
+    if (!Info)
+    {
+        UE_LOG(LogQuidditchGameMode, Warning,
+            TEXT("[QuidditchGameMode] Unregistered agent '%s' reached staging zone"),
+            *Agent->GetName());
+        return;
+    }
+
+    // Gas Station Pattern: incNumberWaitingInLine()
+    ReadyAgents.Add(WeakAgent);
+    AgentsReadyCount = ReadyAgents.Num();
+
+    UE_LOG(LogQuidditchGameMode, Display,
+        TEXT("[QuidditchGameMode] Agent '%s' ready at staging zone | %d/%d ready"),
+        *Agent->GetName(), AgentsReadyCount, RequiredAgentCount);
+
+    // Broadcast for HUD feedback
+    OnAgentReadyAtStart.Broadcast(Agent, AgentsReadyCount);
+
+    // Transition to WaitingForReady if this is the first ready agent
+    if (MatchState == EQuidditchMatchState::Initializing || MatchState == EQuidditchMatchState::FlyingToStart)
+    {
+        TransitionToState(EQuidditchMatchState::WaitingForReady);
+    }
+
+    // Check if all agents are ready
+    CheckAllAgentsReady();
+}
+
+void AQuidditchGameMode::CheckAllAgentsReady()
+{
+    // Gas Station Pattern: while(numberStandingInLine != maxCars) wait
+    // Here we check if all registered agents are ready
+    if (AgentsReadyCount >= RequiredAgentCount && RequiredAgentCount > 0)
+    {
+        UE_LOG(LogQuidditchGameMode, Display,
+            TEXT("[QuidditchGameMode] All %d agents ready! Starting countdown..."),
+            AgentsReadyCount);
+
+        // Broadcast all-ready event
+        OnAllAgentsReady.Broadcast();
+
+        // Start countdown
+        StartCountdown();
+    }
+}
+
+void AQuidditchGameMode::StartCountdown()
+{
+    TransitionToState(EQuidditchMatchState::Countdown);
+
+    CountdownSecondsRemaining = FMath::CeilToInt(MatchStartCountdown);
+
+    UE_LOG(LogQuidditchGameMode, Display,
+        TEXT("[QuidditchGameMode] Countdown: %d seconds"),
+        CountdownSecondsRemaining);
+
+    // Set timer for countdown ticks
+    GetWorld()->GetTimerManager().SetTimer(
+        CountdownTimerHandle,
+        this,
+        &AQuidditchGameMode::OnCountdownTick,
+        1.0f,
+        true  // Looping
+    );
+}
+
+void AQuidditchGameMode::OnCountdownTick()
+{
+    CountdownSecondsRemaining--;
+
+    UE_LOG(LogQuidditchGameMode, Display,
+        TEXT("[QuidditchGameMode] Countdown: %d..."),
+        CountdownSecondsRemaining);
+
+    if (CountdownSecondsRemaining <= 0)
+    {
+        OnCountdownComplete();
+    }
+}
+
+void AQuidditchGameMode::OnCountdownComplete()
+{
+    // Clear countdown timer
+    GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);
+
+    // Gas Station Pattern: gunCondition.notify_all() - fire the starting gun!
+    TransitionToState(EQuidditchMatchState::InProgress);
+
+    UE_LOG(LogQuidditchGameMode, Display,
+        TEXT("[QuidditchGameMode] MATCH STARTED! All agents begin playing."));
+
+    // Structured logging - match started (critical event)
+    SLOG_EVENT(this, "Quidditch.Match", "MatchStarted",
+        Metadata.Add(TEXT("registered_agents"), FString::FromInt(RegisteredAgents.Num()));
+        Metadata.Add(TEXT("team_a_score"), FString::FromInt(TeamAScore));
+        Metadata.Add(TEXT("team_b_score"), FString::FromInt(TeamBScore));
+    );
+
+    // Force immediate flush for critical events (don't wait for async thread)
+    if (UStructuredLoggingSubsystem* LogSystem = UStructuredLoggingSubsystem::Get(this))
+    {
+        LogSystem->FlushLogs();
+    }
+
+    // This is the key broadcast - all controllers listen and set BB.bMatchStarted = true
+    OnMatchStarted.Broadcast(0.0f);
+
+    // Emit WorldSignal for orchestration systems (QuidditchBallSpawner listens for this)
+    EmitWorldSignal(SignalTypeNames::QuidditchMatchStart);
+}
+
+FVector AQuidditchGameMode::GetStagingZoneLocation(EQuidditchTeam InTeam, EQuidditchRole InRole, FName InSlotName) const
+{
+    // Look up by FName key
+    FName Key = EncodeStagingKey(InTeam, InRole, InSlotName);
+
+    if (const TWeakObjectPtr<AActor>* ZonePtr = StagingZoneRegistry.Find(Key))
+    {
+        if (ZonePtr->IsValid())
+        {
+            return ZonePtr->Get()->GetActorLocation();
+        }
+    }
+
+    // Fallback: If SlotName matches Role name, try finding any zone for this Team+Role
+    // This helps when designer hasn't set a specific slot name yet
+    for (const auto& Pair : StagingZoneRegistry)
+    {
+        if (Pair.Value.IsValid())
+        {
+            // Check if key contains our team and role
+            FString KeyStr = Pair.Key.ToString();
+            FString TeamStr = UEnum::GetValueAsString(InTeam);
+            FString RoleStr = UEnum::GetValueAsString(InRole);
+
+            if (KeyStr.Contains(TeamStr) && KeyStr.Contains(RoleStr))
+            {
+                UE_LOG(LogQuidditchGameMode, Warning,
+                    TEXT("[QuidditchGameMode] Staging zone slot name mismatch - requested '%s', found key '%s'. Update BTTask_FlyToStagingZone.SlotName or staging zone StagingSlotName."),
+                    *InSlotName.ToString(), *KeyStr);
+                return Pair.Value->GetActorLocation();
+            }
+        }
+    }
+
+    // Final fallback: return origin with warning
+    UE_LOG(LogQuidditchGameMode, Warning,
+        TEXT("[QuidditchGameMode] No staging zone found for Team=%s Role=%s SlotName='%s' - place BP_QuidditchStagingZone in level with matching configuration"),
+        *UEnum::GetValueAsString(InTeam), *UEnum::GetValueAsString(InRole), *InSlotName.ToString());
+
+    return FVector::ZeroVector;
+}
+
+void AQuidditchGameMode::RegisterStagingZone(AActor* Zone, EQuidditchTeam InTeam, EQuidditchRole InRole, FName InSlotName)
+{
+    if (!Zone)
+    {
+        return;
+    }
+
+    FName Key = EncodeStagingKey(InTeam, InRole, InSlotName);
+    StagingZoneRegistry.Add(Key, Zone);
+
+    UE_LOG(LogQuidditchGameMode, Log,
+        TEXT("[QuidditchGameMode] Registered staging zone '%s' | Team=%s Role=%s SlotName='%s' | Key='%s'"),
+        *Zone->GetName(),
+        *UEnum::GetValueAsString(InTeam),
+        *UEnum::GetValueAsString(InRole),
+        *InSlotName.ToString(),
+        *Key.ToString());
+}
+
+FName AQuidditchGameMode::EncodeStagingKey(EQuidditchTeam InTeam, EQuidditchRole InRole, FName InSlotName)
+{
+    // Create readable FName key: "TeamA_Seeker_Seeker" or "TeamB_Chaser_Chaser_Left"
+    FString TeamStr = UEnum::GetValueAsString(InTeam);
+    FString RoleStr = UEnum::GetValueAsString(InRole);
+    FString SlotStr = InSlotName.IsNone() ? RoleStr : InSlotName.ToString();
+
+    return FName(*FString::Printf(TEXT("%s_%s_%s"), *TeamStr, *RoleStr, *SlotStr));
+}
+
+void AQuidditchGameMode::RequestPlayerJoin(APlayerController* Player, EQuidditchTeam PreferredTeam)
+{
+    if (!Player)
+    {
+        return;
+    }
+
+    if (MatchState != EQuidditchMatchState::InProgress)
+    {
+        UE_LOG(LogQuidditchGameMode, Warning,
+            TEXT("[QuidditchGameMode] Player join rejected - match not in progress (state=%s)"),
+            *UEnum::GetValueAsString(MatchState));
+        return;
+    }
+
+    UE_LOG(LogQuidditchGameMode, Display,
+        TEXT("[QuidditchGameMode] Player requesting to join team %d"),
+        (int32)PreferredTeam);
+
+    // Transition to joining state
+    TransitionToState(EQuidditchMatchState::PlayerJoining);
+
+    // Broadcast join request
+    OnPlayerJoinRequested.Broadcast(Player, PreferredTeam);
+
+    // Select AI to swap - opposite team from player
+    EQuidditchTeam SwapFromTeam = (PreferredTeam == EQuidditchTeam::TeamA)
+        ? EQuidditchTeam::TeamB
+        : EQuidditchTeam::TeamA;
+
+    APawn* AgentToSwap = SelectAgentForSwap(SwapFromTeam);
+
+    if (AgentToSwap)
+    {
+        UE_LOG(LogQuidditchGameMode, Display,
+            TEXT("[QuidditchGameMode] Selected '%s' for team swap"),
+            *AgentToSwap->GetName());
+
+        // Broadcast - the selected agent's controller listens and sets BB.bShouldSwapTeam = true
+        OnAgentSelectedForSwap.Broadcast(AgentToSwap);
+    }
+    else
+    {
+        UE_LOG(LogQuidditchGameMode, Warning,
+            TEXT("[QuidditchGameMode] No agent available for team swap"));
+
+        // Resume match without swap
+        TransitionToState(EQuidditchMatchState::InProgress);
+    }
+}
+
+APawn* AQuidditchGameMode::SelectAgentForSwap(EQuidditchTeam FromTeam)
+{
+    // Priority: Chaser > Beater > Keeper > Seeker
+    // We want to swap the least important role to minimize disruption
+    static const EQuidditchRole SwapPriority[] = {
+        EQuidditchRole::Chaser,
+        EQuidditchRole::Beater,
+        EQuidditchRole::Keeper,
+        EQuidditchRole::Seeker
+    };
+
+    for (EQuidditchRole CurrentRole : SwapPriority)
+    {
+        for (const FQuidditchAgentInfo& Info : RegisteredAgents)
+        {
+            if (Info.Team == FromTeam && Info.AssignedRole == CurrentRole && Info.Agent.IsValid())
+            {
+                return Info.Agent.Get();
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+void AQuidditchGameMode::ExecuteTeamSwap(APawn* Agent, EQuidditchTeam NewTeam)
+{
+    if (!Agent)
+    {
+        return;
+    }
+
+    FQuidditchAgentInfo* Info = FindAgentInfo(Agent);
+    if (!Info)
+    {
+        return;
+    }
+
+    EQuidditchTeam OldTeam = Info->Team;
+    Info->Team = NewTeam;
+
+    UE_LOG(LogQuidditchGameMode, Display,
+        TEXT("[QuidditchGameMode] Agent '%s' swapped from team %d to team %d"),
+        *Agent->GetName(), (int32)OldTeam, (int32)NewTeam);
+
+    // Broadcast swap complete
+    OnTeamSwapComplete.Broadcast(Agent, OldTeam, NewTeam);
+
+    // Resume match
+    TransitionToState(EQuidditchMatchState::InProgress);
+}
+
+// ============================================================================
+// DEBUG FUNCTIONS
+// ============================================================================
+
+void AQuidditchGameMode::DEBUG_ForceStartMatch()
+{
+    UE_LOG(LogQuidditchGameMode, Warning,
+        TEXT("[DEBUG] Force starting match | Registered: %d | Ready: %d | Required: %d"),
+        RegisteredAgents.Num(), AgentsReadyCount, RequiredAgentCount);
+
+    // Clear any pending countdown timer
+    GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);
+
+    // Force transition to InProgress regardless of ready count
+    TransitionToState(EQuidditchMatchState::InProgress);
+
+    // Broadcast match start - all controllers listening will set BB.bMatchStarted = true
+    OnMatchStarted.Broadcast(0.0f);
+
+    // Emit WorldSignal for orchestration systems (QuidditchBallSpawner listens for this)
+    EmitWorldSignal(SignalTypeNames::QuidditchMatchStart);
+
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("[DEBUG] Match force-started! OnMatchStarted broadcast sent."));
+}
+
+// ============================================================================
+// WORLD SIGNAL EMISSION
+// Emits signals via WorldSignalEmitter static delegate for orchestration
+// ============================================================================
+
+void AQuidditchGameMode::EmitWorldSignal(FName InSignalType)
+{
+    // Create signal data for broadcast
+    FSignalData SignalData;
+    SignalData.SignalType = InSignalType;
+    SignalData.Emitter = nullptr;  // GameMode is the source, not an emitter actor
+    SignalData.SignalLocation = FVector::ZeroVector;
+    SignalData.EmitTime = GetWorld()->GetTimeSeconds();
+    SignalData.TeamID = -1;  // Applies to all teams
+
+    // Broadcast via static delegate - QuidditchBallSpawner and other systems listen here
+    AWorldSignalEmitter::OnAnySignalEmittedGlobal.Broadcast(SignalData);
+
+    UE_LOG(LogQuidditchGameMode, Display,
+        TEXT("[QuidditchGameMode] Emitted WorldSignal: %s"),
+        *InSignalType.ToString());
+}
+
+// ============================================================================
+// SPAWN DEBUG - Override to diagnose player spawn issue
+// ============================================================================
+
+APawn* AQuidditchGameMode::SpawnDefaultPawnAtTransform_Implementation(
+    AController* NewPlayer, const FTransform& SpawnTransform)
+{
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT(""));
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("=== SPAWNING PLAYER PAWN ==="));
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("Controller: %s"),
+        NewPlayer ? *NewPlayer->GetClass()->GetName() : TEXT("NULL"));
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("DefaultPawnClass: %s"),
+        DefaultPawnClass ? *DefaultPawnClass->GetName() : TEXT("NULL <- CRITICAL BUG!"));
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("SpawnLocation: %s"), *SpawnTransform.GetLocation().ToString());
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("SpawnRotation: %s"), *SpawnTransform.GetRotation().Rotator().ToString());
+
+    // Call parent to do actual spawn
+    APawn* SpawnedPawn = Super::SpawnDefaultPawnAtTransform_Implementation(NewPlayer, SpawnTransform);
+
+    if (SpawnedPawn)
+    {
+        UE_LOG(LogQuidditchGameMode, Warning, TEXT("Spawned Pawn: %s"), *SpawnedPawn->GetClass()->GetName());
+        UE_LOG(LogQuidditchGameMode, Warning, TEXT("Spawned Location: %s"), *SpawnedPawn->GetActorLocation().ToString());
+
+        // Verify it's the expected type
+        if (AWizardPlayer* WP = Cast<AWizardPlayer>(SpawnedPawn))
+        {
+            UE_LOG(LogQuidditchGameMode, Display, TEXT("SUCCESS: AWizardPlayer spawned correctly!"));
+        }
+        else
+        {
+            UE_LOG(LogQuidditchGameMode, Error,
+                TEXT("WRONG PAWN TYPE! Expected AWizardPlayer (or child), got %s"),
+                *SpawnedPawn->GetClass()->GetName());
+            UE_LOG(LogQuidditchGameMode, Error,
+                TEXT("FIX: Open BP_QuidditchGameMode -> Set Default Pawn Class = BP_CodeWizardPlayer"));
+        }
+    }
+    else
+    {
+        UE_LOG(LogQuidditchGameMode, Error, TEXT("SPAWN FAILED - returned nullptr!"));
+        UE_LOG(LogQuidditchGameMode, Error, TEXT("Check: Is there a PlayerStart in the level?"));
+    }
+
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT("=== SPAWN COMPLETE ==="));
+    UE_LOG(LogQuidditchGameMode, Warning, TEXT(""));
+
+    return SpawnedPawn;
 }

@@ -117,7 +117,41 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Flight|Movement")
     bool bDirectFlight;
 
+    // ========================================================================
+    // STAMINA THRESHOLDS
+    // ========================================================================
+
+    // Stamina percentage below which boost is disabled (0.0-1.0, default 0.4 = 40%)
+    // This prevents AI from draining stamina too quickly during flight
+    UPROPERTY(EditAnywhere, Category = "Flight|Stamina",
+        meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float BoostStaminaThreshold;
+
+    // Stamina percentage below which movement speed is reduced (0.0-1.0, default 0.25 = 25%)
+    UPROPERTY(EditAnywhere, Category = "Flight|Stamina",
+        meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    float ThrottleStaminaThreshold;
+
+    // Movement speed multiplier when stamina is below throttle threshold (0.1-1.0)
+    UPROPERTY(EditAnywhere, Category = "Flight|Stamina",
+        meta = (ClampMin = "0.1", ClampMax = "1.0"))
+    float LowStaminaMovementScale;
+
+    // If true, AI will abort flight and land when stamina reaches critical level
+    UPROPERTY(EditAnywhere, Category = "Flight|Stamina")
+    bool bLandWhenStaminaCritical;
+
+    // Stamina percentage at which AI aborts flight (0.0-0.5, default 0.15 = 15%)
+    // Only used when bLandWhenStaminaCritical is true
+    UPROPERTY(EditAnywhere, Category = "Flight|Stamina",
+        meta = (EditCondition = "bLandWhenStaminaCritical", ClampMin = "0.0", ClampMax = "0.5"))
+    float CriticalStaminaThreshold;
+
 private:
     // Helper to get target location from blackboard
     bool GetTargetLocation(UBehaviorTreeComponent& OwnerComp, FVector& OutLocation) const;
+
+    // Helper to get stamina percentage from pawn's AC_StaminaComponent
+    // Returns -1.0f if component not found (error case)
+    float GetStaminaPercentage(APawn* Pawn) const;
 };

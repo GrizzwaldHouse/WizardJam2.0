@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Structured Logging Verbosity Levels",
+  "description": "Verbosity level definitions and usage guidelines for Unreal Engine Structured Logging",
+  "verbosity_levels": {
+    "Display": {
+      "description": "Normal successful events",
+      "use_when": [
+        "Successful state transitions (e.g., agent possessed, broom mounted)",
+        "Expected behavior confirmations (e.g., perception detected target)",
+        "Regular workflow milestones (e.g., match started, goal scored)"
+      ],
+      "examples": [
+        {
+          "event": "BroomMounted",
+          "reason": "Successful mount operation"
+        },
+        {
+          "event": "ActorPerceived",
+          "reason": "AI successfully detected target"
+        },
+        {
+          "event": "MatchStateChanged",
+          "reason": "Game mode transitioned to new state"
+        }
+      ]
+    },
+    "Warning": {
+      "description": "Unexpected but recoverable conditions",
+      "use_when": [
+        "Validation failures that have fallback behavior",
+        "Performance concerns (e.g., queue near capacity)",
+        "Deprecated code paths executed",
+        "Configuration issues that won't crash but should be fixed"
+      ],
+      "examples": [
+        {
+          "event": "BlackboardKeyNotSet",
+          "reason": "FBlackboardKeySelector not initialized (silent failure)"
+        },
+        {
+          "event": "ChannelMismatch",
+          "reason": "Player tried to use spell without unlocking channel"
+        },
+        {
+          "event": "StaminaDepleted",
+          "reason": "Broom forced dismount due to stamina exhaustion"
+        }
+      ]
+    },
+    "Error": {
+      "description": "Critical failures requiring attention",
+      "use_when": [
+        "Operations that should succeed but failed (e.g., file I/O error)",
+        "Invalid state that indicates a bug (e.g., null pointer in initialized object)",
+        "Component initialization failures",
+        "Failed to spawn critical actors"
+      ],
+      "examples": [
+        {
+          "event": "BehaviorTreeStartFailed",
+          "reason": "AI controller couldn't start behavior tree"
+        },
+        {
+          "event": "ComponentInitializationFailed",
+          "reason": "Required component missing or null"
+        },
+        {
+          "event": "LogFileWriteFailed",
+          "reason": "Async write thread couldn't write to disk"
+        }
+      ]
+    },
+    "Fatal": {
+      "description": "Fatal errors (logged but won't crash)",
+      "use_when": [
+        "Unrecoverable state corruption",
+        "Critical system failures that prevent game from continuing",
+        "Assert-level conditions in non-shipping builds"
+      ],
+      "note": "Structured logging captures fatal errors without crashing. Use native ensure()/check() for actual crash behavior.",
+      "examples": [
+        {
+          "event": "SubsystemInitializationFailed",
+          "reason": "Core subsystem failed to initialize"
+        },
+        {
+          "event": "WorldContextInvalid",
+          "reason": "World context null when it must be valid"
+        }
+      ]
+    },
+    "Verbose": {
+      "description": "Detailed tracing (high verbosity, disabled by default)",
+      "use_when": [
+        "Debugging specific complex systems (e.g., pathfinding iterations)",
+        "Performance profiling (e.g., per-tick measurements)",
+        "Deep diagnostic traces (e.g., every blackboard read/write)"
+      ],
+      "note": "Verbose logging generates high volume. Enable per-channel only when debugging specific systems.",
+      "examples": [
+        {
+          "event": "BlackboardValueRead",
+          "reason": "Trace every blackboard access for debugging decorators"
+        },
+        {
+          "event": "PerceptionStimulus",
+          "reason": "Log every stimulus evaluation, not just successful detections"
+        }
+      ]
+    }
+  },
+  "best_practices": {
+    "choosing_verbosity": [
+      "Default to Display for normal events",
+      "Use Warning for unexpected conditions that don't break functionality",
+      "Use Error for bugs and failures requiring developer attention",
+      "Reserve Verbose for temporary debugging, not production logging"
+    ],
+    "verbosity_filtering": [
+      "Set per-channel verbosity in DefaultStructuredLogging.ini",
+      "Override at runtime via console: slog.SetChannelVerbosity AI Warning",
+      "Focus mode automatically captures all verbosities for selected channels"
+    ]
+  }
+}
