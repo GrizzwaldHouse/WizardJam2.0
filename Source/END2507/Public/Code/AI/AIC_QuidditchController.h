@@ -167,12 +167,12 @@ protected:
     // Set in Blueprint child class or per-instance to configure agent's team/role
     // ========================================================================
 
-    // Which team this AI agent belongs to (set in Blueprint or level instance)
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quidditch|Configuration")
+    // Which team this AI agent belongs to (set in Blueprint defaults)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quidditch|Configuration")
     EQuidditchTeam AgentQuidditchTeam;
 
     // Preferred role for this AI agent (GameMode may assign different role if full)
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quidditch|Configuration")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quidditch|Configuration")
     EQuidditchRole AgentPreferredRole;
 
     // Register this AI agent with GameMode on possess
@@ -247,6 +247,10 @@ private:
     // Called when pawn overlaps any actor - we filter for staging zones
     UFUNCTION()
     void HandlePawnBeginOverlap(AActor* OverlappedActor, AActor* OtherActor);
+
+    // Called when pawn stops overlapping - reset staging zone arrival if agent leaves
+    UFUNCTION()
+    void HandlePawnEndOverlap(AActor* OverlappedActor, AActor* OtherActor);
 
     // Bind to pawn's overlap events
     void BindToPawnOverlapEvents();

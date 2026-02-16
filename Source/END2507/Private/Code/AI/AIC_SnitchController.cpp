@@ -49,6 +49,20 @@ void AAIC_SnitchController::OnPossess(APawn* InPawn)
 	}
 }
 
+void AAIC_SnitchController::OnUnPossess()
+{
+	// Unbind perception delegate to prevent dangling callbacks
+	if (AIPerceptionComp)
+	{
+		AIPerceptionComp->OnTargetPerceptionUpdated.RemoveDynamic(
+			this, &AAIC_SnitchController::HandlePerceptionUpdated);
+	}
+
+	TrackedPursuers.Empty();
+
+	Super::OnUnPossess();
+}
+
 void AAIC_SnitchController::SetupPerception()
 {
 	if (!AIPerceptionComp)

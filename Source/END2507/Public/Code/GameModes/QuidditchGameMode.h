@@ -278,8 +278,11 @@ public:
     // Called by staging zones via overlap, not directly by agents
     // ========================================================================
 
-    // Called by QuidditchStagingZone when an agent enters
+    // Called by controller when agent enters their staging zone
     void HandleAgentReachedStagingZone(APawn* Agent);
+
+    // Called by controller when agent leaves their staging zone
+    void HandleAgentLeftStagingZone(APawn* Agent);
 
     // Get staging zone world location for agent's team/role/slot
     // SlotName examples: "Seeker", "Chaser_Left", "Chaser_Center", "Chaser_Right", "Beater_A", "Beater_B", "Keeper"
@@ -325,6 +328,11 @@ protected:
     // Points awarded per Quaffle goal
     UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Scoring")
     int32 QuaffleGoalPoints;
+
+    // Override RequiredAgentCount for testing (0 = use calculated value)
+    // Set to 1 or 2 in Blueprint to test with fewer agents
+    UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Debug")
+    int32 RequiredAgentOverride;
 
     // Maximum players per role per team
     UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Teams")

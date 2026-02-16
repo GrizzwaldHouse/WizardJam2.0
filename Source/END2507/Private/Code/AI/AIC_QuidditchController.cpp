@@ -44,7 +44,7 @@ AAIC_QuidditchController::AAIC_QuidditchController()
     , PerceivedCollectibleKeyName(TEXT("PerceivedCollectible"))
     // Private: Sync key names (MatchStarted -> HasBroom)
     , MatchStartedKeyName(TEXT("MatchStarted"))
-    , ShouldSwapTeamKeyName(TEXT("bShouldSwapTeam"))
+    , ShouldSwapTeamKeyName(TEXT("ShouldSwapTeam"))
     , QuidditchRoleKeyName(TEXT("QuidditchRole"))
     , HasBroomKeyName(TEXT("HasBroom"))
     // Private: Staging zone tracking
@@ -233,6 +233,16 @@ void AAIC_QuidditchController::OnUnPossess()
 
     UE_LOG(LogQuidditchAI, Display, TEXT("[%s] OnUnPossess"), *GetName());
 
+    // Unbind from BroomComponent delegate to prevent stale reference crash
+    if (CurrentPawn)
+    {
+        if (UAC_BroomComponent* BroomComp = CurrentPawn->FindComponentByClass<UAC_BroomComponent>())
+        {
+            BroomComp->OnFlightStateChanged.RemoveDynamic(this, &AAIC_QuidditchController::HandleFlightStateChanged);
+            UE_LOG(LogQuidditchAI, Log, TEXT("[%s] Unbound from BroomComponent flight state"), *GetName());
+        }
+    }
+
     // Unbind from pawn overlap events before unpossessing
     UnbindFromPawnOverlapEvents();
 
@@ -298,6 +308,9 @@ void AAIC_QuidditchController::SetupBlackboard(APawn* InPawn)
             // BTService_FindStagingZone writes to these keys when it perceives a staging zone
             BBComp->SetValueAsVector(FName("StagingZoneLocation"), FVector::ZeroVector);
             // Note: StagingZoneActor is Object type - left unset until perception finds one
+
+            // Initialize GoalCenter for BTTask_PositionInGoal and BTTask_BlockShot
+            BBComp->SetValueAsVector(FName("GoalCenter"), FVector::ZeroVector);
 
             // Initialize additional Bool keys
             BBComp->SetValueAsBool(FName("ReachedStagingZone"), false);
@@ -906,11 +919,12 @@ void AAIC_QuidditchController::BindToPawnOverlapEvents()
         return;
     }
 
-    // Bind to pawn's overlap events
+    // Bind to pawn's overlap events (both enter and exit for staging zone tracking)
     ControlledPawn->OnActorBeginOverlap.AddDynamic(this, &AAIC_QuidditchController::HandlePawnBeginOverlap);
+    ControlledPawn->OnActorEndOverlap.AddDynamic(this, &AAIC_QuidditchController::HandlePawnEndOverlap);
 
     UE_LOG(LogQuidditchAI, Display,
-        TEXT("[%s] Bound to pawn overlap events for staging zone detection"),
+        TEXT("[%s] Bound to pawn overlap events (begin + end) for staging zone detection"),
         *GetName());
 }
 
@@ -922,8 +936,9 @@ void AAIC_QuidditchController::UnbindFromPawnOverlapEvents()
         return;
     }
 
-    // Unbind from pawn's overlap events
+    // Unbind from pawn's overlap events (both enter and exit)
     ControlledPawn->OnActorBeginOverlap.RemoveDynamic(this, &AAIC_QuidditchController::HandlePawnBeginOverlap);
+    ControlledPawn->OnActorEndOverlap.RemoveDynamic(this, &AAIC_QuidditchController::HandlePawnEndOverlap);
 
     UE_LOG(LogQuidditchAI, Log,
         TEXT("[%s] Unbound from pawn overlap events"),
@@ -1010,4 +1025,71 @@ void AAIC_QuidditchController::HandlePawnBeginOverlap(AActor* OverlappedActor, A
         *GetName(),
         *StagingZone->GetName(),
         *StagingZone->GetZoneIdentifier().ToString());
+}
+
+void AAIC_QuidditchController::HandlePawnEndOverlap(AActor* OverlappedActor, AActor* OtherActor)
+{
+    // Only process if we previously notified arrival
+    if (!bNotifiedStagingZoneArrival)
+    {
+        return;
+    }
+
+    // Check if the actor we stopped overlapping is a staging zone
+    AQuidditchStagingZone* StagingZone = Cast<AQuidditchStagingZone>(OtherActor);
+    if (!StagingZone)
+    {
+        return;
+    }
+
+    APawn* ControlledPawn = GetPawn();
+    if (!ControlledPawn)
+    {
+        return;
+    }
+
+    // Verify this was our matching staging zone (same team/role check as begin overlap)
+    int32 ZoneTeam = StagingZone->TeamHint;
+    int32 ZoneRole = StagingZone->RoleHint;
+
+    int32 AgentTeam = 0;
+    int32 AgentRole = 0;
+
+    if (CachedGameMode.IsValid())
+    {
+        EQuidditchTeam MyTeam = CachedGameMode->GetAgentTeam(ControlledPawn);
+        EQuidditchRole MyRole = CachedGameMode->GetAgentRole(ControlledPawn);
+        AgentTeam = static_cast<int32>(MyTeam);
+        AgentRole = static_cast<int32>(MyRole);
+    }
+
+    if (ZoneTeam != AgentTeam || ZoneRole != AgentRole)
+    {
+        return;
+    }
+
+    // Agent left their staging zone - reset arrival state
+    bNotifiedStagingZoneArrival = false;
+
+    // Update blackboard
+    if (UBlackboardComponent* BB = GetBlackboardComponent())
+    {
+        BB->SetValueAsBool(FName("ReachedStagingZone"), false);
+        BB->SetValueAsBool(FName("IsReady"), false);
+    }
+
+    // Notify GameMode so it can decrement ready count
+    if (CachedGameMode.IsValid())
+    {
+        CachedGameMode->HandleAgentLeftStagingZone(ControlledPawn);
+    }
+
+    SLOG_EVENT(this, "AI.Staging", "AgentLeftStagingZone",
+        Metadata.Add(TEXT("zone_name"), StagingZone->GetName());
+        Metadata.Add(TEXT("zone_identifier"), StagingZone->GetZoneIdentifier().ToString());
+    );
+
+    UE_LOG(LogQuidditchAI, Display,
+        TEXT("[%s] LEFT staging zone '%s' | Notified GameMode"),
+        *GetName(), *StagingZone->GetName());
 }

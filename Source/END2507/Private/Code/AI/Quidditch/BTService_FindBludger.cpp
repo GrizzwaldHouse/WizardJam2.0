@@ -20,7 +20,6 @@
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Object.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
 #include "Perception/AIPerceptionComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "GameFramework/Actor.h"
 #include "EngineUtils.h"
 #include "Code/GameModes/QuidditchGameMode.h"
@@ -252,12 +251,21 @@ TArray<AActor*> UBTService_FindBludger::FindBludgersInWorld(UWorld* World) const
 
     if (BludgerClass)
     {
-        UGameplayStatics::GetAllActorsOfClass(World, BludgerClass, Bludgers);
+        for (TActorIterator<AActor> It(World, BludgerClass); It; ++It)
+        {
+            Bludgers.Add(*It);
+        }
     }
 
     if (Bludgers.Num() == 0)
     {
-        UGameplayStatics::GetAllActorsWithTag(World, TEXT("Bludger"), Bludgers);
+        for (TActorIterator<AActor> It(World); It; ++It)
+        {
+            if (It->ActorHasTag(TEXT("Bludger")))
+            {
+                Bludgers.Add(*It);
+            }
+        }
     }
 
     return Bludgers;

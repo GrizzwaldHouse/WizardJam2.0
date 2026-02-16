@@ -18,6 +18,7 @@ DEFINE_LOG_CATEGORY(LogQuidditchGameMode);
 AQuidditchGameMode::AQuidditchGameMode()
     : SnitchCatchPoints(150)
     , QuaffleGoalPoints(10)
+    , RequiredAgentOverride(0)
     , MaxSeekersPerTeam(1)
     , MaxChasersPerTeam(3)
     , MaxBeatersPerTeam(2)
@@ -61,7 +62,17 @@ void AQuidditchGameMode::BeginPlay()
 
     // Calculate required agents based on team composition
     // Each team: 1 Seeker + 3 Chasers + 2 Beaters + 1 Keeper = 7 per team
-    RequiredAgentCount = 2 * (MaxSeekersPerTeam + MaxChasersPerTeam + MaxBeatersPerTeam + MaxKeepersPerTeam);
+    if (RequiredAgentOverride > 0)
+    {
+        RequiredAgentCount = RequiredAgentOverride;
+        UE_LOG(LogQuidditchGameMode, Warning,
+            TEXT("[QuidditchGameMode] RequiredAgentOverride=%d (testing mode)"),
+            RequiredAgentCount);
+    }
+    else
+    {
+        RequiredAgentCount = 2 * (MaxSeekersPerTeam + MaxChasersPerTeam + MaxBeatersPerTeam + MaxKeepersPerTeam);
+    }
 
     UE_LOG(LogQuidditchGameMode, Display,
         TEXT("[QuidditchGameMode] Match initialized | Snitch=%d pts | Goal=%d pts | RequiredAgents=%d"),
@@ -323,6 +334,9 @@ void AQuidditchGameMode::NotifySnitchCaught(APawn* CatchingSeeker, EQuidditchTea
     // Emit WorldSignal for match end (ball cleanup, etc.)
     EmitWorldSignal(SignalTypeNames::QuidditchMatchEnd);
 
+    // Notify all controllers that match has ended (resets BB.MatchStarted -> false)
+    OnMatchEnded.Broadcast();
+
     // End match
     FString Reason = FString::Printf(TEXT("Snitch caught! Final: %d - %d"), TeamAScore, TeamBScore);
     EndMatch(Winner == EQuidditchTeam::TeamA, Reason);  // Assuming player is Team A
@@ -474,6 +488,44 @@ void AQuidditchGameMode::HandleAgentReachedStagingZone(APawn* Agent)
 
     // Check if all agents are ready
     CheckAllAgentsReady();
+}
+
+void AQuidditchGameMode::HandleAgentLeftStagingZone(APawn* Agent)
+{
+    if (!Agent)
+    {
+        return;
+    }
+
+    // Only allow leaving during pre-match phases (not during active match)
+    if (MatchState == EQuidditchMatchState::InProgress || MatchState == EQuidditchMatchState::Ended)
+    {
+        return;
+    }
+
+    TWeakObjectPtr<APawn> WeakAgent(Agent);
+    if (!ReadyAgents.Contains(WeakAgent))
+    {
+        return;
+    }
+
+    // Remove from ready set
+    ReadyAgents.Remove(WeakAgent);
+    AgentsReadyCount = ReadyAgents.Num();
+
+    UE_LOG(LogQuidditchGameMode, Display,
+        TEXT("[QuidditchGameMode] Agent '%s' LEFT staging zone | %d/%d ready"),
+        *Agent->GetName(), AgentsReadyCount, RequiredAgentCount);
+
+    // If countdown was running and we lost a ready agent, cancel it
+    if (MatchState == EQuidditchMatchState::Countdown)
+    {
+        GetWorld()->GetTimerManager().ClearTimer(CountdownTimerHandle);
+        TransitionToState(EQuidditchMatchState::WaitingForReady);
+
+        UE_LOG(LogQuidditchGameMode, Warning,
+            TEXT("[QuidditchGameMode] Countdown cancelled - agent left staging zone"));
+    }
 }
 
 void AQuidditchGameMode::CheckAllAgentsReady()

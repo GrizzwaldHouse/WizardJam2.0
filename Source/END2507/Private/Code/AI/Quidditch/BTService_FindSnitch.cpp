@@ -12,8 +12,8 @@
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Object.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
 #include "Perception/AIPerceptionComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "GameFramework/Actor.h"
+#include "EngineUtils.h"
 
 UBTService_FindSnitch::UBTService_FindSnitch()
     : MaxSnitchRange(5000.0f)
@@ -163,28 +163,22 @@ AActor* UBTService_FindSnitch::FindSnitchInWorld(UWorld* World) const
         return nullptr;
     }
 
-    // Fallback: Find by class
+    // Fallback: Find by class using TActorIterator
     if (SnitchClass)
     {
-        AActor* Snitch = nullptr;
-        TArray<AActor*> FoundActors;
-        UGameplayStatics::GetAllActorsOfClass(World, SnitchClass, FoundActors);
-
-        if (FoundActors.Num() > 0)
+        for (TActorIterator<AActor> It(World, SnitchClass); It; ++It)
         {
-            Snitch = FoundActors[0];
+            return *It;
         }
-
-        return Snitch;
     }
 
     // Fallback: Find by tag
-    TArray<AActor*> TaggedActors;
-    UGameplayStatics::GetAllActorsWithTag(World, TEXT("Snitch"), TaggedActors);
-
-    if (TaggedActors.Num() > 0)
+    for (TActorIterator<AActor> It(World); It; ++It)
     {
-        return TaggedActors[0];
+        if (It->ActorHasTag(TEXT("Snitch")))
+        {
+            return *It;
+        }
     }
 
     return nullptr;

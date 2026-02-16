@@ -76,20 +76,17 @@ void UAC_BroomComponent::BeginPlay()
     if (!StaminaComponent)
     {
         UE_LOG(LogBroomComponent, Error,
-            TEXT("[%s] No AC_StaminaComponent found! Flight will be DISABLED (ForceDismount on first tick)."),
+            TEXT("[%s] No AC_StaminaComponent found! Flight will be DISABLED."),
             *Owner->GetName());
-        // NOTE: We don't return here anymore - let flight attempt but it will immediately dismount
-        // This provides clearer diagnostic in logs than silent failure
+        return;
     }
-    else
-    {
-        UE_LOG(LogBroomComponent, Display,
-            TEXT("[%s] StaminaComponent found: Stamina=%.1f/%.1f | MinToFly=%.1f"),
-            *Owner->GetName(),
-            StaminaComponent->GetCurrentStamina(),
-            StaminaComponent->GetMaxStamina(),
-            MinStaminaToFly);
-    }
+
+    UE_LOG(LogBroomComponent, Display,
+        TEXT("[%s] StaminaComponent found: Stamina=%.1f/%.1f | MinToFly=%.1f"),
+        *Owner->GetName(),
+        StaminaComponent->GetCurrentStamina(),
+        StaminaComponent->GetMaxStamina(),
+        MinStaminaToFly);
 
     // Bind to stamina changed event
     StaminaComponent->OnStaminaChanged.AddDynamic(this, &UAC_BroomComponent::OnStaminaChanged);
@@ -181,13 +178,26 @@ void UAC_BroomComponent::BeginPlay()
         SetupFlightInputBindings(EnhancedInput);
     }
 
-    UE_LOG(LogBroomComponent, Display,
-        TEXT("[%s] BroomComponent ready | Stamina: %.0f/%.0f | FlySpeed: %.0f | Socket: %s"),
-        *Owner->GetName(),
-        StaminaComponent->GetCurrentStamina(),
-        StaminaComponent->GetMaxStamina(),
-        FlySpeed,
-        OwnerChar->GetMesh()->DoesSocketExist(MountSocketName) ? TEXT("FOUND") : TEXT("MISSING"));
+    if (StaminaComponent)
+    {
+        UE_LOG(LogBroomComponent, Display,
+            TEXT("[%s] BroomComponent ready | Stamina: %.0f/%.0f | FlySpeed: %.0f | Socket: %s"),
+            *Owner->GetName(),
+            StaminaComponent->GetCurrentStamina(),
+            StaminaComponent->GetMaxStamina(),
+            FlySpeed,
+            OwnerChar->GetMesh()->DoesSocketExist(MountSocketName) ? TEXT("FOUND") : TEXT("MISSING"));
+    }
+}
+
+void UAC_BroomComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (StaminaComponent)
+    {
+        StaminaComponent->OnStaminaChanged.RemoveDynamic(this, &UAC_BroomComponent::OnStaminaChanged);
+    }
+
+    Super::EndPlay(EndPlayReason);
 }
 
 void UAC_BroomComponent::TickComponent(float DeltaTime, ELevelTick TickType,

@@ -13,7 +13,6 @@
 #include "AIController.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "GameFramework/Pawn.h"
-#include "Kismet/GameplayStatics.h"
 
 UBTDecorator_IsSeeker::UBTDecorator_IsSeeker()
 {
@@ -33,9 +32,9 @@ bool UBTDecorator_IsSeeker::CalculateRawConditionValue(
 
     APawn* AIPawn = AIController->GetPawn();
 
-    // Get QuidditchGameMode
+    // Get QuidditchGameMode via World (no GameplayStatics)
     AQuidditchGameMode* GameMode = Cast<AQuidditchGameMode>(
-        UGameplayStatics::GetGameMode(AIController)
+        AIController->GetWorld()->GetAuthGameMode()
     );
 
     if (!GameMode)

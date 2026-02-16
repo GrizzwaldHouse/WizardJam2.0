@@ -13,8 +13,8 @@
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Bool.h"
 #include "Perception/AIPerceptionComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "GameFramework/Actor.h"
+#include "EngineUtils.h"
 #include "Code/GameModes/QuidditchGameMode.h"
 
 UBTService_FindQuaffle::UBTService_FindQuaffle()
@@ -202,25 +202,22 @@ AActor* UBTService_FindQuaffle::FindQuaffleInWorld(UWorld* World) const
         return nullptr;
     }
 
-    // Find by class
+    // Find by class using TActorIterator
     if (QuaffleClass)
     {
-        TArray<AActor*> FoundActors;
-        UGameplayStatics::GetAllActorsOfClass(World, QuaffleClass, FoundActors);
-
-        if (FoundActors.Num() > 0)
+        for (TActorIterator<AActor> It(World, QuaffleClass); It; ++It)
         {
-            return FoundActors[0];
+            return *It;
         }
     }
 
     // Find by tag
-    TArray<AActor*> TaggedActors;
-    UGameplayStatics::GetAllActorsWithTag(World, TEXT("Quaffle"), TaggedActors);
-
-    if (TaggedActors.Num() > 0)
+    for (TActorIterator<AActor> It(World); It; ++It)
     {
-        return TaggedActors[0];
+        if (It->ActorHasTag(TEXT("Quaffle")))
+        {
+            return *It;
+        }
     }
 
     return nullptr;

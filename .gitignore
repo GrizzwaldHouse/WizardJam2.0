@@ -157,3 +157,9 @@ claude.md
 # Local development documentation, not needed in version control
 # -----------------------------------------------------------------------------
 Documentation/
+
+# -----------------------------------------------------------------------------
+# WINDOWS NUL ARTIFACTS - Created by accidental redirect to nul on Windows
+# -----------------------------------------------------------------------------
+nul
+Content/nul
