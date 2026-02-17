@@ -128,19 +128,35 @@ void AAIC_QuidditchController::OnPossess(APawn* InPawn)
         SLOG_EVENT(this, "AI.Team", "FactionAssigned",
             Metadata.Add(TEXT("faction_id"), FString::FromInt(FactionID));
             Metadata.Add(TEXT("faction_color"), FactionColor.ToString());
-            Metadata.Add(TEXT("seeker_tag_added"), TEXT("true"));
+            Metadata.Add(TEXT("preferred_role"), UEnum::GetValueAsString(Agent->GetPreferredQuidditchRole()));
         );
 
         UE_LOG(LogQuidditchAI, Display,
             TEXT("[%s] Faction initialized: Team ID = %d"),
             *GetName(), GetGenericTeamId().GetId());
 
-        // Add Seeker tag so Snitch perception detects this as a pursuer
-        // The SnitchBall::AIC_SnitchController checks for "Seeker", "Flying", or "Player" tags
-        InPawn->Tags.AddUnique(TEXT("Seeker"));
-
-        UE_LOG(LogQuidditchAI, Display, TEXT("[%s] Added 'Seeker' tag to %s"),
-            *GetName(), *InPawn->GetName());
+        // Add role-specific tag for perception filtering
+        // BUG FIX (Feb 17, 2026): Previously added "Seeker" to ALL agents
+        // Only actual Seekers should get the "Seeker" tag (Snitch checks for it)
+        EQuidditchRole PreferredRole = Agent->GetPreferredQuidditchRole();
+        if (PreferredRole == EQuidditchRole::Seeker)
+        {
+            InPawn->Tags.AddUnique(TEXT("Seeker"));
+            UE_LOG(LogQuidditchAI, Display, TEXT("[%s] Added 'Seeker' tag to %s"),
+                *GetName(), *InPawn->GetName());
+        }
+        else
+        {
+            FString RoleStr = UEnum::GetValueAsString(PreferredRole);
+            int32 ColonIndex;
+            if (RoleStr.FindLastChar(TEXT(':'), ColonIndex))
+            {
+                RoleStr = RoleStr.Mid(ColonIndex + 1);
+            }
+            InPawn->Tags.AddUnique(FName(*RoleStr));
+            UE_LOG(LogQuidditchAI, Display, TEXT("[%s] Added '%s' tag to %s"),
+                *GetName(), *RoleStr, *InPawn->GetName());
+        }
     }
     else
     {

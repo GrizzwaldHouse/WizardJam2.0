@@ -232,4 +232,8 @@ private:
 
     // Update position history for stuck detection
     void UpdatePositionHistory(const FVector& CurrentLocation, float DeltaSeconds);
+
+    // Notify GameMode directly when agent arrives at staging zone
+    // Bypasses physics overlap dependency (dual detection fix - Feb 17, 2026)
+    void NotifyGameModeArrival(APawn* Pawn);
 };

@@ -353,6 +353,11 @@ void UBTTask_FlyToStagingZone::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
             BB->SetValueAsBool(FName("ReachedStagingZone"), true);
         }
 
+        // FIX (Feb 17, 2026): Notify GameMode directly on arrival
+        // Previously relied on physics overlap (dual detection bug)
+        // The overlap may not fire if TriggerRadius < ArrivalRadius
+        NotifyGameModeArrival(Pawn);
+
         FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
         return;
     }
@@ -376,6 +381,9 @@ void UBTTask_FlyToStagingZone::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
         {
             BB->SetValueAsBool(FName("ReachedStagingZone"), true);
         }
+
+        // FIX (Feb 17, 2026): Notify GameMode directly on overshoot arrival
+        NotifyGameModeArrival(Pawn);
 
         FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
         return;
@@ -653,5 +661,21 @@ void UBTTask_FlyToStagingZone::UpdatePositionHistory(const FVector& CurrentLocat
         {
             PositionHistory.RemoveAt(0);
         }
+    }
+}
+
+void UBTTask_FlyToStagingZone::NotifyGameModeArrival(APawn* Pawn)
+{
+    // Direct GameMode notification bypasses the physics overlap dependency
+    // The controller's HandlePawnBeginOverlap may also fire (harmless - GM prevents double-counting)
+    if (!Pawn) return;
+
+    AQuidditchGameMode* GameMode = Cast<AQuidditchGameMode>(Pawn->GetWorld()->GetAuthGameMode());
+    if (GameMode)
+    {
+        GameMode->HandleAgentReachedStagingZone(Pawn);
+        UE_LOG(LogBTTask_FlyToStagingZone, Display,
+            TEXT("[%s] Notified GameMode of staging zone arrival (direct)"),
+            *Pawn->GetName());
     }
 }
