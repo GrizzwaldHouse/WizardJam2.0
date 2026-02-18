@@ -57,6 +57,6 @@ protected:
     // ========================================================================
 
     // Blackboard key to clear after swap (Bool)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector ShouldSwapTeamKey;
 };

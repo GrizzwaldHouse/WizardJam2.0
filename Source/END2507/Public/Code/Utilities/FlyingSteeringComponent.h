@@ -57,11 +57,9 @@ public:
     // MAIN API - Call from Behavior Tree Service or AI Controller
     // ========================================================================
 
-    /**
-     * Returns combined steering force from all enabled behaviors
-     * This is the main function you call every tick
-     * Port of: Flock.cs Update() method, Lines 146-179
-     */
+    // Returns combined steering force from all enabled behaviors
+    // This is the main function you call every tick
+    // Port of: Flock.cs Update() method, Lines 146-179
     UFUNCTION(BlueprintCallable, Category = "Steering")
     FVector CalculateSteeringForce(float DeltaTime);
 
@@ -69,27 +67,21 @@ public:
     // INDIVIDUAL BEHAVIORS - For debugging or role-specific overrides
     // ========================================================================
 
-    /**
-     * Alignment: Match average velocity of nearby flock members
-     * Port of: Flock.cs CalculateAlignmentAcceleration(), Lines 65-81
-     * Math: AlignmentInfluence = AverageVelocity / MaxSpeed, clamped to unit length
-     */
+    // Alignment: Match average velocity of nearby flock members
+    // Port of: Flock.cs CalculateAlignmentAcceleration(), Lines 65-81
+    // Math: AlignmentInfluence = AverageVelocity / MaxSpeed, clamped to unit length
     UFUNCTION(BlueprintCallable, Category = "Steering|Behaviors")
     FVector CalculateAlignmentForce();
 
-    /**
-     * Cohesion: Steer toward center of flock (or target if set)
-     * Port of: Flock.cs CalculateCohesionAcceleration(), Lines 83-103
-     * Math: CohesionInfluence = (AveragePosition - MyPosition).Normalized * (Distance/Radius)
-     */
+    // Cohesion: Steer toward center of flock (or target if set)
+    // Port of: Flock.cs CalculateCohesionAcceleration(), Lines 83-103
+    // Math: CohesionInfluence = (AveragePosition - MyPosition).Normalized * (Distance/Radius)
     UFUNCTION(BlueprintCallable, Category = "Steering|Behaviors")
     FVector CalculateCohesionForce();
 
-    /**
-     * Separation: Push away from nearby flock members
-     * Port of: Flock.cs CalculateSeparationAcceleration(), Lines 105-140
-     * Math: For each nearby agent, add AwayDirection * (1 - Distance/SafeDistance)
-     */
+    // Separation: Push away from nearby flock members
+    // Port of: Flock.cs CalculateSeparationAcceleration(), Lines 105-140
+    // Math: For each nearby agent, add AwayDirection * (1 - Distance/SafeDistance)
     UFUNCTION(BlueprintCallable, Category = "Steering|Behaviors")
     FVector CalculateSeparationForce();
 
@@ -97,30 +89,24 @@ public:
     // TARGET OVERRIDE - For goal seeking, ball chasing, player pursuit
     // ========================================================================
 
-    /**
-     * Sets a target location for Cohesion to steer toward
-     * When set, Cohesion ignores flock center and steers toward this point
-     */
+    // Sets a target location for Cohesion to steer toward
+    // When set, Cohesion ignores flock center and steers toward this point
     UFUNCTION(BlueprintCallable, Category = "Steering|Target")
     void SetTargetLocation(const FVector& Target);
 
-    /**
-     * Sets a target actor to track (automatically updates target location)
-     */
+    // Sets a target actor to track (automatically updates target location)
     UFUNCTION(BlueprintCallable, Category = "Steering|Target")
     void SetTargetActor(AActor* Target);
 
-    /**
-     * Clears target, returns Cohesion to normal flock center behavior
-     */
+    // Clears target, returns Cohesion to normal flock center behavior
     UFUNCTION(BlueprintCallable, Category = "Steering|Target")
     void ClearTarget();
 
-    /** Query if we have an active target */
+    // Query if we have an active target
     UFUNCTION(BlueprintPure, Category = "Steering|Target")
     bool HasTarget() const { return bHasTarget; }
 
-    /** Get current target location */
+    // Get current target location
     UFUNCTION(BlueprintPure, Category = "Steering|Target")
     FVector GetTargetLocation() const { return TargetLocation; }
 
@@ -128,13 +114,13 @@ public:
     // BEHAVIOR TOGGLES - Enable/disable for role-specific configurations
     // ========================================================================
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Steering|Toggles")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Steering|Toggles")
     bool bEnableAlignment;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Steering|Toggles")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Steering|Toggles")
     bool bEnableCohesion;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Steering|Toggles")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Steering|Toggles")
     bool bEnableSeparation;
 
 protected:
@@ -147,62 +133,48 @@ protected:
     // Designer tunes these in Blueprint class defaults
     // ========================================================================
 
-    /**
-     * Alignment strength multiplier
-     * Higher = agents match teammate velocity more strongly
-     * Flock.cs constructor default: 5.0f (Line 23)
-     */
+    // Alignment strength multiplier
+    // Higher = agents match teammate velocity more strongly
+    // Flock.cs constructor default: 5.0f (Line 23)
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Steering|Strengths",
         meta = (ClampMin = "0.0", ClampMax = "20.0"))
     float AlignmentStrength;
 
-    /**
-     * Cohesion strength multiplier
-     * Higher = agents pull toward center more strongly
-     * Flock.cs constructor default: 5.0f (Line 24)
-     */
+    // Cohesion strength multiplier
+    // Higher = agents pull toward center more strongly
+    // Flock.cs constructor default: 5.0f (Line 24)
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Steering|Strengths",
         meta = (ClampMin = "0.0", ClampMax = "20.0"))
     float CohesionStrength;
 
-    /**
-     * Separation strength multiplier
-     * Higher = agents push away from each other more strongly
-     * Flock.cs constructor default: 5.0f (Line 25)
-     */
+    // Separation strength multiplier
+    // Higher = agents push away from each other more strongly
+    // Flock.cs constructor default: 5.0f (Line 25)
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Steering|Strengths",
         meta = (ClampMin = "0.0", ClampMax = "20.0"))
     float SeparationStrength;
 
-    /**
-     * Radius within which to consider other agents as flock members
-     * Flock.cs constructor default: 50.0f (Line 26)
-     * Scaled 10x for UE units: 500.0f
-     */
+    // Radius within which to consider other agents as flock members
+    // Flock.cs constructor default: 50.0f (Line 26)
+    // Scaled 10x for UE units: 500.0f
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Steering|Detection",
         meta = (ClampMin = "100.0", ClampMax = "2000.0"))
     float FlockRadius;
 
-    /**
-     * Distance at which separation force begins pushing
-     * Agents closer than this trigger separation
-     */
+    // Distance at which separation force begins pushing
+    // Agents closer than this trigger separation
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Steering|Detection",
         meta = (ClampMin = "50.0", ClampMax = "500.0"))
     float SafeRadius;
 
-    /**
-     * Tag to identify flock members
-     * Only actors with this tag are considered for flocking calculations
-     * Example: "Team0_Chasers", "Team1_Chasers"
-     */
+    // Tag to identify flock members
+    // Only actors with this tag are considered for flocking calculations
+    // Example: "Team0_Chasers", "Team1_Chasers"
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Steering|Detection")
     FName FlockTag;
 
-    /**
-     * Maximum speed for velocity calculations
-     * Used in Alignment normalization
-     */
+    // Maximum speed for velocity calculations
+    // Used in Alignment normalization
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Steering|Movement")
     float MaxSpeed;
 
@@ -211,19 +183,19 @@ private:
     // RUNTIME STATE - Mirrors Flock.cs instance variables
     // ========================================================================
 
-    /** Average position of all flock members (Flock.cs Line 15) */
+    // Average position of all flock members (Flock.cs Line 15)
     FVector AveragePosition;
 
-    /** Average velocity of all flock members (Flock.cs Line 16: AverageForward) */
+    // Average velocity of all flock members (Flock.cs Line 16: AverageForward)
     FVector AverageVelocity;
 
-    /** Current target location for Cohesion override */
+    // Current target location for Cohesion override
     FVector TargetLocation;
 
-    /** Whether we have an active target */
+    // Whether we have an active target
     bool bHasTarget;
 
-    /** Target actor being tracked */
+    // Target actor being tracked
     UPROPERTY()
     TWeakObjectPtr<AActor> TargetActor;
 
@@ -231,15 +203,13 @@ private:
     // INTERNAL FUNCTIONS - Direct ports of Flock.cs methods
     // ========================================================================
 
-    /**
-     * Calculate average position and velocity of nearby flock members
-     * Port of: Flock.cs Lines 37-63
-     */
+    // Calculate average position and velocity of nearby flock members
+    // Port of: Flock.cs Lines 37-63
     void CalculateFlockAverages();
 
-    /** Get all actors within FlockRadius that have matching FlockTag */
+    // Get all actors within FlockRadius that have matching FlockTag
     TArray<AActor*> GetNearbyFlockMembers();
 
-    /** Get velocity of an actor (from movement component) */
+    // Get velocity of an actor (from movement component)
     FVector GetActorVelocity(AActor* Actor) const;
 };

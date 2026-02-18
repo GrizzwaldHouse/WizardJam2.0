@@ -231,7 +231,7 @@ void AAIC_CodeBaseAgentController::OnPerceptionUpdated(AActor* Actor, FAIStimulu
 
         // Set Player key in Blackboard
         BB->SetValueAsObject(PlayerKeyName, Actor);
-        BB->SetValueAsBool(TEXT("bHasTarget"), true);
+        BB->SetValueAsBool(HasTargetKeyName, true);
     }
     else // Lost sight of target
     {
@@ -309,7 +309,7 @@ void AAIC_CodeBaseAgentController::ForgetPlayer()
     if (BB)
     {
         BB->ClearValue(PlayerKeyName);
-        BB->SetValueAsBool(TEXT("bHasTarget"), false);
+        BB->SetValueAsBool(HasTargetKeyName, false);
         UE_LOG(LogAgentController, Log, TEXT("Player forgotten - Blackboard cleared"));
     }
 }
@@ -321,7 +321,14 @@ void AAIC_CodeBaseAgentController::BeginPlay()
 }
 
 void AAIC_CodeBaseAgentController::OnUnPossess()
-{ // Unbind delegates before losing pawn reference
+{
+    // Unbind perception delegate before losing pawn reference
+    if (AIPerception)
+    {
+        AIPerception->OnTargetPerceptionUpdated.RemoveDynamic(this, &AAIC_CodeBaseAgentController::OnPerceptionUpdated);
+    }
+
+    // Unbind pawn delegates (health, death)
     UnbindPawnDelegates();
 
     Super::OnUnPossess();

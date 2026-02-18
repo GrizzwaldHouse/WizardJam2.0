@@ -18,6 +18,8 @@ class END2507_API UOverheadBarWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	UOverheadBarWidget(const FObjectInitializer& ObjectInitializer);
+
 	// ========== WIDGET REFERENCES (Designer creates in Blueprint) ==========
 
 	// Health progress bar - must be named "HealthProgressBar" in Blueprint
@@ -32,33 +34,33 @@ public:
 
 	// Health color when >60%
 	UPROPERTY(EditDefaultsOnly, Category = "Appearance|Health")
-	FLinearColor HealthColorHigh = FLinearColor::Green;
+	FLinearColor HealthColorHigh;
 
 	// Health color when 30-60%
 	UPROPERTY(EditDefaultsOnly, Category = "Appearance|Health")
-	FLinearColor HealthColorMedium = FLinearColor::Yellow;
+	FLinearColor HealthColorMedium;
 
 	// Health color when <30%
 	UPROPERTY(EditDefaultsOnly, Category = "Appearance|Health")
-	FLinearColor HealthColorLow = FLinearColor::Red;
+	FLinearColor HealthColorLow;
 
 	// Stamina color when >50%
 	UPROPERTY(EditDefaultsOnly, Category = "Appearance|Stamina")
-	FLinearColor StaminaColorHigh = FLinearColor(0.0f, 1.0f, 1.0f); // Cyan
+	FLinearColor StaminaColorHigh;
 
 	// Stamina color when <50%
 	UPROPERTY(EditDefaultsOnly, Category = "Appearance|Stamina")
-	FLinearColor StaminaColorLow = FLinearColor(1.0f, 0.5f, 0.0f); // Orange
+	FLinearColor StaminaColorLow;
 
 	// ========== VISIBILITY THRESHOLDS ==========
 
 	// Consider health "full" at this ratio (0.99 = 99%)
 	UPROPERTY(EditDefaultsOnly, Category = "Visibility")
-	float FullHealthThreshold = 0.99f;
+	float FullHealthThreshold;
 
 	// Consider stamina "full" at this ratio (0.99 = 99%)
 	UPROPERTY(EditDefaultsOnly, Category = "Visibility")
-	float FullStaminaThreshold = 0.99f;
+	float FullStaminaThreshold;
 
 	// ========== PUBLIC UPDATE FUNCTIONS ==========
 
@@ -76,8 +78,8 @@ public:
 
 private:
 	// Cached health ratio for visibility checks
-	float CurrentHealthRatio = 1.0f;
+	float CurrentHealthRatio;
 
 	// Cached stamina ratio for visibility checks
-	float CurrentStaminaRatio = 1.0f;
+	float CurrentStaminaRatio;
 };

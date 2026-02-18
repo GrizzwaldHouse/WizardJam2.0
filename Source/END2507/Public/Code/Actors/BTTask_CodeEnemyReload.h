@@ -11,9 +11,6 @@
 #include "BehaviorTree/BTTaskNode.h"
 #include "BTTask_CodeEnemyReload.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class END2507_API UBTTask_CodeEnemyReload : public UBTTaskNode
 {
@@ -33,7 +30,7 @@ protected:
 private:
 	// Blackboard key name for reload finished message
 
-	UPROPERTY(EditAnywhere, Category = "Blackboard", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, Category = "Blackboard", meta = (AllowPrivateAccess = "true"))
 	FName FinishedMessageKey;
 	// Cached reference to behavior tree component for message handling
 	UBehaviorTreeComponent* CachedOwnerComp;

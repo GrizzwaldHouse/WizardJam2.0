@@ -243,9 +243,27 @@ void ABasePlayer::BeginPlay()
 	}
 }
 
+void ABasePlayer::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// Unbind health component delegates
+	if (HealthComponent)
+	{
+		HealthComponent->OnHealthChanged.RemoveDynamic(this, &ABasePlayer::HandleHealthChanged);
+		HealthComponent->OnHealed.RemoveDynamic(this, &ABasePlayer::HandleHealed);
+	}
+
+	// Unbind rifle ammo delegate
+	if (EquippedRifle)
+	{
+		EquippedRifle->OnAmmoChanged.RemoveDynamic(this, &ABasePlayer::HandleAmmoChanged);
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void ABasePlayer::InputAxisMoveForward(float AxisValue)
 {
-	
+
 
 	AddMovementInput(FRotator(0.0f,GetControlRotation().Yaw, 0.0f).Vector(), AxisValue);
 }

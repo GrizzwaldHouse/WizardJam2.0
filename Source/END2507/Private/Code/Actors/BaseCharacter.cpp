@@ -25,15 +25,10 @@ ABaseCharacter::ABaseCharacter()
 		MeshComp->bPauseAnims = false;
 		UE_LOG(LogBaseCharacter, Log, TEXT("Mesh tick options configured for death animations"));
 	}
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMeshAsset(TEXT("/Script/Engine.SkeletalMesh'/Game/END_Starter/Mannequin/Meshes/SKM_Manny.SKM_Manny'"));
-
-	if (SkeletalMeshAsset.Succeeded())
-	{
-		GetMesh()->SetSkeletalMesh(SkeletalMeshAsset.Object);
-
-		GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -90.0f));
-		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
-	}
+	// Mesh is set in Blueprint (BP_CodeBaseCharacter or child BPs)
+	// Default offset for Mannequin skeletal mesh
+	GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -90.0f));
+	GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 }
 UAC_HealthComponent* ABaseCharacter::GetHealthComponent() const
 {
@@ -116,6 +111,34 @@ void ABaseCharacter::BeginPlay()
 
 	// Bind animation delegates
 	BindAnimationDelegates();
+}
+
+void ABaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// Unbind health component delegates
+	if (HealthComponent)
+	{
+		HealthComponent->OnHealthChanged.RemoveDynamic(this, &ABaseCharacter::OnHealthChanged);
+		HealthComponent->OnDeath.RemoveDynamic(this, &ABaseCharacter::OnDeath);
+	}
+
+	// Unbind rifle delegate
+	if (EquippedRifle)
+	{
+		EquippedRifle->OnReloadStart.RemoveDynamic(this, &ABaseCharacter::HandleReloadStart);
+	}
+
+	// Unbind animation delegates
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		if (UCharacterAnimation* CharAnim = Cast<UCharacterAnimation>(MeshComp->GetAnimInstance()))
+		{
+			CharAnim->OnReloadNow.RemoveDynamic(this, &ABaseCharacter::HandleReloadNow);
+			CharAnim->OnActionEnded.RemoveDynamic(this, &ABaseCharacter::HandleActionEnded);
+		}
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void ABaseCharacter::OnHealthChanged(float HealthRatio)

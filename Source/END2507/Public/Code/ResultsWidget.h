@@ -10,12 +10,9 @@
 class UWidgetSwitcher;
 class UVerticalBox;
 class UButtonWidgetComponent;
-/**
- *  * Results screen shown by GameMode when game ends.
- * Designer contains: Widget Switcher + Button Area + Two Buttons.
- * C++ handles: State configuration (win vs lose), button bindings.
- * 
- */
+// Results screen shown by GameMode when game ends.
+// Designer contains: Widget Switcher + Button Area + Two Buttons.
+// C++ handles: State configuration (win vs lose), button bindings.
 UCLASS()
 class END2507_API UResultsWidget : public UUserWidget
 {

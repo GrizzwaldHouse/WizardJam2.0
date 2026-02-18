@@ -41,6 +41,7 @@ public:
 protected:
 	FGenericTeamId MyTeamID;
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	// Element type for this agent's appearance (queries ElementDatabase for color)
 	// Examples: "Flame" (red), "Ice" (cyan), "Lightning" (yellow), "Arcane" (purple)

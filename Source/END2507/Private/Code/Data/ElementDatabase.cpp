@@ -7,6 +7,7 @@
 // ============================================================================
 
 #include "Code/Data/ElementDatabase.h"
+#include "Code/Data/ElementDatabaseSubsystem.h"
 
 DEFINE_LOG_CATEGORY(LogElementDatabase);
 
@@ -84,19 +85,19 @@ FName UElementDatabase::NormalizeElementName(FName Element) const
     // Handle common typos
     if (ElementStr.Equals(TEXT("Lighting"), ESearchCase::IgnoreCase))
     {
-        return FName(TEXT("Lightning"));
+        return ElementNames::Lightning;
     }
     if (ElementStr.Equals(TEXT("Fire"), ESearchCase::IgnoreCase))
     {
-        return FName(TEXT("Flame"));
+        return ElementNames::Flame;
     }
     if (ElementStr.Equals(TEXT("Frost"), ESearchCase::IgnoreCase))
     {
-        return FName(TEXT("Ice"));
+        return ElementNames::Ice;
     }
     if (ElementStr.Equals(TEXT("Magic"), ESearchCase::IgnoreCase))
     {
-        return FName(TEXT("Arcane"));
+        return ElementNames::Arcane;
     }
 
     // Try to find exact match first

@@ -39,6 +39,24 @@ class UElementDatabase;
 DECLARE_LOG_CATEGORY_EXTERN(LogElementSubsystem, Log, All);
 
 // ============================================================================
+// ELEMENT NAME CONSTANTS
+// Use these instead of inline FName(TEXT("Flame")) etc.
+// ============================================================================
+namespace ElementNames
+{
+    static const FName Flame    = FName(TEXT("Flame"));
+    static const FName Ice      = FName(TEXT("Ice"));
+    static const FName Lightning = FName(TEXT("Lightning"));
+    static const FName Arcane   = FName(TEXT("Arcane"));
+
+    // Common typos/aliases handled by NormalizeElementName
+    static const FName Fire     = FName(TEXT("Fire"));
+    static const FName Frost    = FName(TEXT("Frost"));
+    static const FName Lighting = FName(TEXT("Lighting"));
+    static const FName Magic    = FName(TEXT("Magic"));
+}
+
+// ============================================================================
 // UElementDatabaseSubsystem
 // Global accessor for element data
 // ============================================================================

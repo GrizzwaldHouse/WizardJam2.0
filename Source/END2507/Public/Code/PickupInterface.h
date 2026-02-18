@@ -13,9 +13,6 @@ class UPickupInterface : public UInterface
 	GENERATED_BODY()
 };
 
-/**
- * 
- */
 class END2507_API IPickupInterface
 {
 	GENERATED_BODY()

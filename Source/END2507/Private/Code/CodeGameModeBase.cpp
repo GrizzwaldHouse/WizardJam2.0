@@ -48,6 +48,30 @@ void ACodeGameModeBase::BeginPlay()
 	
 }
 
+void ACodeGameModeBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// Unbind from spawner OnDestroyed delegates
+	for (ASpawner* Spawner : ActiveSpawners)
+	{
+		if (Spawner)
+		{
+			Spawner->OnDestroyed.RemoveDynamic(this, &ACodeGameModeBase::UnregisterSpawner);
+		}
+	}
+
+	// Unbind from player health delegate
+	if (CurrentPlayer)
+	{
+		UAC_HealthComponent* HealthComp = CurrentPlayer->GetHealthComponent();
+		if (HealthComp)
+		{
+			HealthComp->OnDeathEnded.RemoveDynamic(this, &ACodeGameModeBase::RemovePlayer);
+		}
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void ACodeGameModeBase::CheckWinCondition()
 
 {

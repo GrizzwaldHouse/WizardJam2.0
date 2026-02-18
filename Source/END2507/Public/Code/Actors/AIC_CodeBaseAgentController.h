@@ -13,14 +13,12 @@ class UAISenseConfig_Sight;
 class UAISenseConfig_Hearing;
 class ASpawner;
 struct FAIStimulus;
-/**
- * AI Controller with team support and Observer pattern
- * - Implements IGenericTeamAgentInterface for AI perception team filtering
- * - Subscribes to Spawner's faction assignment broadcasts (Observer pattern)
- * - Updates Blackboard with team data for BehaviorTree decisions
- *
- * Usage: Attached to BaseAgent, listens to Spawner broadcasts for team assignment
- */
+// AI Controller with team support and Observer pattern
+// - Implements IGenericTeamAgentInterface for AI perception team filtering
+// - Subscribes to Spawner's faction assignment broadcasts (Observer pattern)
+// - Updates Blackboard with team data for BehaviorTree decisions
+//
+// Usage: Attached to BaseAgent, listens to Spawner broadcasts for team assignment
 
 DECLARE_LOG_CATEGORY_EXTERN(LogAgentController, Log, All);
 UCLASS()

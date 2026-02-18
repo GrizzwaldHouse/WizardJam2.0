@@ -57,7 +57,7 @@ protected:
 	// ========================================================================
 
 	// Blackboard key to store the nearest threat actor (Object type)
-	UPROPERTY(EditAnywhere, Category = "Blackboard")
+	UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
 	FBlackboardKeySelector NearestSeekerKey;
 
 	// ========================================================================
@@ -66,11 +66,11 @@ protected:
 
 	// Tags that identify valid threats - actor must have at least one of these
 	// Default: "Seeker", "Player"
-	UPROPERTY(EditAnywhere, Category = "Tracking")
+	UPROPERTY(EditDefaultsOnly, Category = "Tracking")
 	TArray<FName> ValidThreatTags;
 
 	// Maximum distance to track threats (0 = unlimited)
-	UPROPERTY(EditAnywhere, Category = "Tracking", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditDefaultsOnly, Category = "Tracking", meta = (ClampMin = "0.0"))
 	float MaxTrackingDistance;
 
 private:

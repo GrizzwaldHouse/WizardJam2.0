@@ -64,7 +64,8 @@ public:
 	virtual bool CanPickAmmo() const override;
 protected:
 	virtual void BeginPlay() override;
-	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 	virtual void HandleHurt(float HealthRatio) ;
 	virtual void HandleDeathStart(float Ratio) override;
 	//Appearance

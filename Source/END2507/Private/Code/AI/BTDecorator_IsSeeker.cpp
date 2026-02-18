@@ -32,11 +32,15 @@ bool UBTDecorator_IsSeeker::CalculateRawConditionValue(
 
     APawn* AIPawn = AIController->GetPawn();
 
-    // Get QuidditchGameMode via World (no GameplayStatics)
-    AQuidditchGameMode* GameMode = Cast<AQuidditchGameMode>(
-        AIController->GetWorld()->GetAuthGameMode()
-    );
+    // Cache the GameMode to avoid repeated casts
+    if (!CachedGameMode.IsValid())
+    {
+        CachedGameMode = Cast<AQuidditchGameMode>(
+            AIController->GetWorld()->GetAuthGameMode()
+        );
+    }
 
+    AQuidditchGameMode* GameMode = CachedGameMode.Get();
     if (!GameMode)
     {
         return false;

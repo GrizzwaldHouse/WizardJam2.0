@@ -7,7 +7,6 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "UObject/ConstructorHelpers.h"
 #include "Engine/DamageEvents.h"
 #include "Engine/StaticMesh.h"
 #include "../END2507.h"
@@ -32,28 +31,12 @@ AHideWall::AHideWall()
     WallMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WallMesh"));
     WallMesh->SetupAttachment(RootComponent);
 
-    static ConstructorHelpers::FObjectFinder<UStaticMesh> CubeMesh(
-        TEXT("/Engine/BasicShapes/Cube")
-    );
-    if (CubeMesh.Succeeded())
+    // Mesh set via WallMeshAsset property in Blueprint
+    if (WallMeshAsset)
     {
-        WallMesh->SetStaticMesh(CubeMesh.Object);
-        WallMesh->SetRelativeScale3D(FVector(1.f, 9.f, 3.f)); // Match blueprint wall dimensions
-
-    }    
-
-    //static ConstructorHelpers::FObjectFinder<UMaterial> MaterialAsset(TEXT("/Game/SuperGrid/Materials/M_SuperGrid_Mat"));
-    //if (MaterialAsset.Succeeded())
-    //{
-    //    WallMesh->SetMaterial(0, MaterialAsset.Object);
-    //}
-    //else {
-    //    UE_LOG(LogHideWall, Warning, TEXT("%s: Failed to load default material"), *GetName());
-    //    //Default color palette instead of single color
-    //    WallColors.Add(FLinearColor(0.3f, 0.3f, 0.3f, 1.0f)); // Gray
-    //    WallColors.Add(FLinearColor(0.5f, 0.3f, 0.2f, 1.0f)); // Brown
-    //    WallColors.Add(FLinearColor(0.2f, 0.2f, 0.25f, 1.0f)); // Dark blue-gray
-    //}
+        WallMesh->SetStaticMesh(WallMeshAsset);
+    }
+    WallMesh->SetRelativeScale3D(FVector(1.f, 9.f, 3.f));
     // Setup wall collision for projectiles
     WallMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     WallMesh->SetCollisionObjectType(ECC_WorldStatic);

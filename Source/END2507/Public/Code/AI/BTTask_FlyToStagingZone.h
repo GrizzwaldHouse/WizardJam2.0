@@ -76,12 +76,12 @@ protected:
 
     // Blackboard key to READ staging zone location from BTService_FindStagingZone (Vector)
     // PRIMARY source - if set and valid, uses this location
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector StagingZoneLocationKey;
 
     // Blackboard key to write staging zone location for other systems (Vector)
     // FALLBACK: If StagingZoneLocationKey is not set, queries GameMode and writes here
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector TargetLocationKey;
 
     // ========================================================================
@@ -89,38 +89,38 @@ protected:
     // ========================================================================
 
     // How close to staging zone before task succeeds (Solution 2: increased default)
-    UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "50.0", ClampMax = "1000.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "50.0", ClampMax = "1000.0"))
     float ArrivalRadius;
 
     // Extended arrival radius for velocity-based detection (Solution 3)
     // If moving away from target while within this radius, consider arrived
-    UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "100.0", ClampMax = "2000.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "100.0", ClampMax = "2000.0"))
     float ExtendedArrivalRadius;
 
     // Flight speed multiplier (1.0 = normal)
-    UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "0.5", ClampMax = "2.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "0.5", ClampMax = "2.0"))
     float FlightSpeedMultiplier;
 
     // Enable boost when far from target
-    UPROPERTY(EditAnywhere, Category = "Navigation")
+    UPROPERTY(EditDefaultsOnly, Category = "Navigation")
     bool bUseBoostWhenFar;
 
     // Distance threshold to enable boost (boost turns ON above this distance)
-    UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "100.0", EditCondition = "bUseBoostWhenFar"))
+    UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "100.0", EditCondition = "bUseBoostWhenFar"))
     float BoostDistanceThreshold;
 
     // Hysteresis threshold - boost turns OFF when distance drops below this value
     // Set lower than BoostDistanceThreshold to prevent oscillation
-    UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "50.0", EditCondition = "bUseBoostWhenFar"))
+    UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "50.0", EditCondition = "bUseBoostWhenFar"))
     float BoostDisableThreshold;
 
     // Minimum stamina percent (0-1) required to enable boost - prevents depleting all stamina
-    UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "0.1", ClampMax = "0.9", EditCondition = "bUseBoostWhenFar"))
+    UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "0.1", ClampMax = "0.9", EditCondition = "bUseBoostWhenFar"))
     float MinStaminaForBoost;
 
     // Altitude calculation scale (divides altitude difference to get vertical input)
     // Lower values = steeper climbs, higher values = gentler climbs
-    UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "50.0", ClampMax = "500.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "50.0", ClampMax = "500.0"))
     float AltitudeScale;
 
     // ========================================================================
@@ -128,15 +128,15 @@ protected:
     // ========================================================================
 
     // Use FlightSteeringComponent for obstacle-aware navigation
-    UPROPERTY(EditAnywhere, Category = "Flight Steering")
+    UPROPERTY(EditDefaultsOnly, Category = "Flight Steering")
     bool bUseFlightSteering;
 
     // Use predictive steering to lead moving targets
-    UPROPERTY(EditAnywhere, Category = "Flight Steering", meta = (EditCondition = "bUseFlightSteering"))
+    UPROPERTY(EditDefaultsOnly, Category = "Flight Steering", meta = (EditCondition = "bUseFlightSteering"))
     bool bUsePredictiveSteering;
 
     // Prediction time for leading targets (seconds)
-    UPROPERTY(EditAnywhere, Category = "Flight Steering", meta = (ClampMin = "0.0", ClampMax = "2.0", EditCondition = "bUsePredictiveSteering"))
+    UPROPERTY(EditDefaultsOnly, Category = "Flight Steering", meta = (ClampMin = "0.0", ClampMax = "2.0", EditCondition = "bUsePredictiveSteering"))
     float PredictionTime;
 
     // ========================================================================
@@ -144,11 +144,11 @@ protected:
     // ========================================================================
 
     // Enable velocity-based overshoot detection
-    UPROPERTY(EditAnywhere, Category = "Arrival Detection")
+    UPROPERTY(EditDefaultsOnly, Category = "Arrival Detection")
     bool bEnableVelocityArrival;
 
     // Minimum speed (negative = moving away) to trigger overshoot detection
-    UPROPERTY(EditAnywhere, Category = "Arrival Detection", meta = (EditCondition = "bEnableVelocityArrival"))
+    UPROPERTY(EditDefaultsOnly, Category = "Arrival Detection", meta = (EditCondition = "bEnableVelocityArrival"))
     float OvershootSpeedThreshold;
 
     // ========================================================================
@@ -156,19 +156,19 @@ protected:
     // ========================================================================
 
     // Enable stuck detection based on position history
-    UPROPERTY(EditAnywhere, Category = "Stuck Detection")
+    UPROPERTY(EditDefaultsOnly, Category = "Stuck Detection")
     bool bEnableStuckDetection;
 
     // How often to sample position (seconds)
-    UPROPERTY(EditAnywhere, Category = "Stuck Detection", meta = (ClampMin = "0.5", ClampMax = "5.0", EditCondition = "bEnableStuckDetection"))
+    UPROPERTY(EditDefaultsOnly, Category = "Stuck Detection", meta = (ClampMin = "0.5", ClampMax = "5.0", EditCondition = "bEnableStuckDetection"))
     float StuckCheckInterval;
 
     // Number of position samples to keep
-    UPROPERTY(EditAnywhere, Category = "Stuck Detection", meta = (ClampMin = "3", ClampMax = "10", EditCondition = "bEnableStuckDetection"))
+    UPROPERTY(EditDefaultsOnly, Category = "Stuck Detection", meta = (ClampMin = "3", ClampMax = "10", EditCondition = "bEnableStuckDetection"))
     int32 StuckSampleCount;
 
     // If agent moves less than this over all samples, consider stuck (units)
-    UPROPERTY(EditAnywhere, Category = "Stuck Detection", meta = (ClampMin = "50.0", ClampMax = "500.0", EditCondition = "bEnableStuckDetection"))
+    UPROPERTY(EditDefaultsOnly, Category = "Stuck Detection", meta = (ClampMin = "50.0", ClampMax = "500.0", EditCondition = "bEnableStuckDetection"))
     float StuckDistanceThreshold;
 
     // ========================================================================
@@ -178,7 +178,7 @@ protected:
     // Slot name for staging zone lookup - must match the StagingSlotName on the zone actor
     // Examples: "Seeker", "Chaser_Left", "Chaser_Center", "Chaser_Right", "Beater_A", "Beater_B", "Keeper"
     // If empty/None, defaults to the role name (e.g., "Seeker" for a Seeker agent)
-    UPROPERTY(EditAnywhere, Category = "Staging")
+    UPROPERTY(EditDefaultsOnly, Category = "Staging")
     FName SlotName;
 
     // ========================================================================
@@ -186,12 +186,12 @@ protected:
     // ========================================================================
 
     // Enable timeout - if agent can't reach staging zone in time, task fails (triggers fallback)
-    UPROPERTY(EditAnywhere, Category = "Timeout")
+    UPROPERTY(EditDefaultsOnly, Category = "Timeout")
     bool bEnableTimeout;
 
     // Maximum time (seconds) to reach staging zone before failing and triggering fallback
     // Only used if bEnableTimeout is true
-    UPROPERTY(EditAnywhere, Category = "Timeout", meta = (ClampMin = "5.0", ClampMax = "120.0", EditCondition = "bEnableTimeout"))
+    UPROPERTY(EditDefaultsOnly, Category = "Timeout", meta = (ClampMin = "5.0", ClampMax = "120.0", EditCondition = "bEnableTimeout"))
     float TimeoutDuration;
 
 private:

@@ -59,11 +59,11 @@ public:
 
 protected:
     // If true, mount the broom. If false, dismount.
-    UPROPERTY(EditAnywhere, Category = "Broom")
+    UPROPERTY(EditDefaultsOnly, Category = "Broom")
     bool bMountBroom;
 
     // Optional: Blackboard key to store flight state result
     // Leave empty to not update blackboard
-    UPROPERTY(EditAnywhere, Category = "Broom")
+    UPROPERTY(EditDefaultsOnly, Category = "Broom")
     FBlackboardKeySelector FlightStateKey;
 };

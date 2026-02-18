@@ -6,13 +6,10 @@
 #include "GameFramework/PlayerController.h"
 #include "MenuPlayerController.generated.h"
 class UUserWidget;
-/**
- *  * PlayerController is spawned per-player and manages input routing.
- * Different controllers for different contexts:
- * - MenuPlayerController: UI-only input, mouse cursor visible, no pawn
- * - GameplayPlayerController: FPS controls, mouse for camera, possesses character pawn
- * 
- */
+// PlayerController is spawned per-player and manages input routing.
+// Different controllers for different contexts:
+// - MenuPlayerController: UI-only input, mouse cursor visible, no pawn
+// - GameplayPlayerController: FPS controls, mouse for camera, possesses character pawn
 UCLASS()
 class END2507_API AMenuPlayerController : public APlayerController
 {

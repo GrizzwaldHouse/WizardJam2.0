@@ -50,24 +50,24 @@ public:
 
 protected:
     // Blackboard key containing target actor to interact with
-    UPROPERTY(EditAnywhere, Category = "Interaction")
+    UPROPERTY(EditDefaultsOnly, Category = "Interaction")
     FBlackboardKeySelector TargetKey;
 
     // Maximum distance to initiate interaction
-    UPROPERTY(EditAnywhere, Category = "Interaction",
+    UPROPERTY(EditDefaultsOnly, Category = "Interaction",
         meta = (ClampMin = "50.0", ClampMax = "500.0"))
     float InteractionRange;
 
     // If set, AI must have this channel to interact (e.g., "Broom")
-    UPROPERTY(EditAnywhere, Category = "Interaction")
+    UPROPERTY(EditDefaultsOnly, Category = "Interaction")
     FName RequiredChannel;
 
     // Clear target from blackboard after successful interaction
-    UPROPERTY(EditAnywhere, Category = "Interaction")
+    UPROPERTY(EditDefaultsOnly, Category = "Interaction")
     bool bClearTargetOnSuccess;
 
     // Blackboard key to set true on successful interaction (optional)
-    UPROPERTY(EditAnywhere, Category = "Interaction")
+    UPROPERTY(EditDefaultsOnly, Category = "Interaction")
     FBlackboardKeySelector SuccessStateKey;
 
 private:

@@ -45,15 +45,15 @@ public:
 
 protected:
     // Blackboard key for the StagingZone actor reference
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector StagingZoneActorKey;
 
     // Blackboard key for the StagingZone's location (flight destination)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector StagingZoneLocationKey;
 
     // Maximum perception range for staging zones
-    UPROPERTY(EditAnywhere, Category = "Perception")
+    UPROPERTY(EditDefaultsOnly, Category = "Perception")
     float MaxStagingZoneRange;
 
 private:

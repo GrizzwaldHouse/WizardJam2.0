@@ -54,11 +54,11 @@ protected:
     // ========================================================================
 
     // Calculated flock movement direction (Vector)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector FlockDirectionKey;
 
     // Calculated flock target position (Vector)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector FlockTargetKey;
 
     // ========================================================================
@@ -66,15 +66,15 @@ protected:
     // ========================================================================
 
     // Separation weight - avoid crowding
-    UPROPERTY(EditAnywhere, Category = "Flocking|Weights", meta = (ClampMin = "0.0", ClampMax = "5.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Flocking|Weights", meta = (ClampMin = "0.0", ClampMax = "5.0"))
     float SeparationWeight;
 
     // Alignment weight - match neighbor heading
-    UPROPERTY(EditAnywhere, Category = "Flocking|Weights", meta = (ClampMin = "0.0", ClampMax = "5.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Flocking|Weights", meta = (ClampMin = "0.0", ClampMax = "5.0"))
     float AlignmentWeight;
 
     // Cohesion weight - move toward group center
-    UPROPERTY(EditAnywhere, Category = "Flocking|Weights", meta = (ClampMin = "0.0", ClampMax = "5.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Flocking|Weights", meta = (ClampMin = "0.0", ClampMax = "5.0"))
     float CohesionWeight;
 
     // ========================================================================
@@ -82,19 +82,19 @@ protected:
     // ========================================================================
 
     // Radius within which agents are considered neighbors
-    UPROPERTY(EditAnywhere, Category = "Flocking|Range")
+    UPROPERTY(EditDefaultsOnly, Category = "Flocking|Range")
     float NeighborRadius;
 
     // Minimum separation distance before avoidance kicks in
-    UPROPERTY(EditAnywhere, Category = "Flocking|Range")
+    UPROPERTY(EditDefaultsOnly, Category = "Flocking|Range")
     float SeparationRadius;
 
     // Maximum speed for flock movement
-    UPROPERTY(EditAnywhere, Category = "Flocking|Movement")
+    UPROPERTY(EditDefaultsOnly, Category = "Flocking|Movement")
     float MaxFlockSpeed;
 
     // Distance ahead to place flock target point
-    UPROPERTY(EditAnywhere, Category = "Flocking|Movement")
+    UPROPERTY(EditDefaultsOnly, Category = "Flocking|Movement")
     float FlockTargetDistance;
 
 private:

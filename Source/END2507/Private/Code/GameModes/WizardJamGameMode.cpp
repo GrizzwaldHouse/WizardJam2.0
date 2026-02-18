@@ -8,7 +8,6 @@
 #include "Code/Actors/BaseAgent.h"
 #include "Code/Spells/SpellCollectible.h"
 #include "TimerManager.h"
-#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogWizardJamGameMode, Log, All);
 

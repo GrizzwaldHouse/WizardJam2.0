@@ -68,11 +68,11 @@ protected:
 	// ========================================================================
 
 	// Blackboard key containing the threat actor to evade (Object type)
-	UPROPERTY(EditAnywhere, Category = "Blackboard")
+	UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
 	FBlackboardKeySelector ThreatActorKey;
 
 	// Blackboard key to write evading state (Bool type, optional)
-	UPROPERTY(EditAnywhere, Category = "Blackboard")
+	UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
 	FBlackboardKeySelector IsEvadingKey;
 
 	// ========================================================================
@@ -80,24 +80,24 @@ protected:
 	// ========================================================================
 
 	// Distance to maintain from threat before task succeeds
-	UPROPERTY(EditAnywhere, Category = "Evasion", meta = (ClampMin = "100.0"))
+	UPROPERTY(EditDefaultsOnly, Category = "Evasion", meta = (ClampMin = "100.0"))
 	float SafeDistance;
 
 	// Speed multiplier during evasion (1.0 = normal speed)
-	UPROPERTY(EditAnywhere, Category = "Evasion", meta = (ClampMin = "0.1", ClampMax = "3.0"))
+	UPROPERTY(EditDefaultsOnly, Category = "Evasion", meta = (ClampMin = "0.1", ClampMax = "3.0"))
 	float EvasionSpeedMultiplier;
 
 	// Maximum time to spend evading before giving up (0 = no limit)
-	UPROPERTY(EditAnywhere, Category = "Evasion", meta = (ClampMin = "0.0"))
+	UPROPERTY(EditDefaultsOnly, Category = "Evasion", meta = (ClampMin = "0.0"))
 	float MaxEvasionTime;
 
 	// Include vertical component in evasion (fly up/down as well as away)
-	UPROPERTY(EditAnywhere, Category = "Evasion")
+	UPROPERTY(EditDefaultsOnly, Category = "Evasion")
 	bool bIncludeVerticalEvasion;
 
 	// Randomization angle applied to flee direction (degrees)
 	// Makes movement less predictable
-	UPROPERTY(EditAnywhere, Category = "Evasion", meta = (ClampMin = "0.0", ClampMax = "45.0"))
+	UPROPERTY(EditDefaultsOnly, Category = "Evasion", meta = (ClampMin = "0.0", ClampMax = "45.0"))
 	float DirectionRandomization;
 
 private:

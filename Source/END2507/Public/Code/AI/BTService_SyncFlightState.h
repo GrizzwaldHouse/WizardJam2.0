@@ -43,6 +43,6 @@ protected:
 
 	// Blackboard key to store the IsFlying state
 	// Must be a Bool key type
-	UPROPERTY(EditAnywhere, Category = "Blackboard")
+	UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
 	FBlackboardKeySelector IsFlyingKey;
 };

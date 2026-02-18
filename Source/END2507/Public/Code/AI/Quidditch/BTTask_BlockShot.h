@@ -51,15 +51,15 @@ protected:
     // ========================================================================
 
     // Incoming Quaffle to block (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector QuaffleKey;
 
     // Quaffle velocity for prediction (Vector)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector QuaffleVelocityKey;
 
     // Goal center we're defending (Vector)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector GoalCenterKey;
 
     // ========================================================================
@@ -67,11 +67,11 @@ protected:
     // ========================================================================
 
     // Calculated intercept position (Vector)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector InterceptPositionKey;
 
     // True if shot is blockable (Bool)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector CanBlockKey;
 
     // ========================================================================
@@ -79,19 +79,19 @@ protected:
     // ========================================================================
 
     // Maximum speed Keeper can move to intercept
-    UPROPERTY(EditAnywhere, Category = "Block")
+    UPROPERTY(EditDefaultsOnly, Category = "Block")
     float KeeperMaxSpeed;
 
     // Minimum Quaffle speed to consider it a "shot"
-    UPROPERTY(EditAnywhere, Category = "Block")
+    UPROPERTY(EditDefaultsOnly, Category = "Block")
     float MinShotSpeed;
 
     // Maximum time to predict ahead
-    UPROPERTY(EditAnywhere, Category = "Block")
+    UPROPERTY(EditDefaultsOnly, Category = "Block")
     float MaxPredictionTime;
 
     // Distance considered a successful block
-    UPROPERTY(EditAnywhere, Category = "Block")
+    UPROPERTY(EditDefaultsOnly, Category = "Block")
     float BlockRadius;
 
 private:

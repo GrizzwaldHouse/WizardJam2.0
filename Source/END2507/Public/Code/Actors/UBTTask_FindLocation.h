@@ -4,9 +4,6 @@
 
 #include "CoreMinimal.h"
 
-/**
- * 
- */
 class END2507_API UBTTask_FindLocation
 {
 public:

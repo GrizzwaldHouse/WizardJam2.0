@@ -130,15 +130,15 @@ struct END2507_API FQuidditchTeamData
     GENERATED_BODY()
 
     // Team identifier (0 or 1)
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Team")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Team")
     int32 TeamID;
 
     // Team display name
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Team")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Team")
     FString TeamName;
 
     // Team color for visuals
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Team")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Team")
     FLinearColor TeamColor;
 
     // Current score

@@ -15,7 +15,7 @@ DEFINE_LOG_CATEGORY(LogFleeBehavior);
 UBTTask_EnemyFlee::UBTTask_EnemyFlee()
 {
 	NodeName = "Flee From Player";
-	FleeLocationKey = TEXT("Location");
+	FleeLocationKey = TEXT("FleeLocation");
 	FleeRadius = 1500.0f;
 	bNotifyTick = false;
 }
@@ -77,7 +77,7 @@ EBTNodeResult::Type UBTTask_EnemyFlee::ExecuteTask(UBehaviorTreeComponent& Owner
     if (BestCoverActor)
     {
         // found a safe wall, set its location as the FleeLocation for the Move To task
-        BlackboardComp->SetValueAsVector(TEXT("FleeLocation"), BestCoverActor->GetActorLocation());
+        BlackboardComp->SetValueAsVector(FleeLocationKey, BestCoverActor->GetActorLocation());
         UE_LOG(LogFleeBehavior, Log, TEXT("Flee location found: %s"),
             *BestCoverActor->GetActorLocation().ToString());
         return EBTNodeResult::Succeeded;
@@ -96,7 +96,7 @@ EBTNodeResult::Type UBTTask_EnemyFlee::ExecuteTask(UBehaviorTreeComponent& Owner
     FVector FleeTarget = MyLocation + (AwayDirection * FleeRadius);
 
 
-    BlackboardComp->SetValueAsVector(TEXT("FleeLocation"), FleeTarget);
+    BlackboardComp->SetValueAsVector(FleeLocationKey, FleeTarget);
     UE_LOG(LogFleeBehavior, Log, TEXT("Flee location found: %s"), *FleeTarget.ToString());
     return EBTNodeResult::Succeeded;
 

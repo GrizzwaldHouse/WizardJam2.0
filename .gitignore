@@ -154,9 +154,8 @@ claude.md
 
 # -----------------------------------------------------------------------------
 # DOCUMENTATION - Setup guides and reference materials
-# Local development documentation, not needed in version control
+# Tracked in version control for portfolio and team reference
 # -----------------------------------------------------------------------------
-Documentation/
 
 # -----------------------------------------------------------------------------
 # WINDOWS NUL ARTIFACTS - Created by accidental redirect to nul on Windows

@@ -31,6 +31,7 @@
 #include "QuidditchGameMode.generated.h"
 
 class APawn;
+class AWorldSignalEmitter;
 
 // ============================================================================
 // ENUMS (EQuidditchRole defined in QuidditchTypes.h)
@@ -133,6 +134,19 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 
 // Broadcast when match ends
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnQuidditchMatchEnded);
+
+// Broadcast when agent ready count changes (debug instrumentation)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+    FOnAgentCountUpdated,
+    int32, CurrentReadyCount,
+    int32, RequiredCount
+);
+
+// Broadcast each second during countdown (for HUD display)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+    FOnQuidditchCountdownTick,
+    int32, SecondsRemaining
+);
 
 // Broadcast when player requests to join mid-match
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
@@ -273,6 +287,14 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Quidditch|Sync")
     FOnTeamSwapComplete OnTeamSwapComplete;
 
+    // Debug instrumentation - broadcasts ready count on every change
+    UPROPERTY(BlueprintAssignable, Category = "Quidditch|Debug")
+    FOnAgentCountUpdated OnAgentCountUpdated;
+
+    // Countdown tick - broadcasts seconds remaining each tick
+    UPROPERTY(BlueprintAssignable, Category = "Quidditch|Sync")
+    FOnQuidditchCountdownTick OnCountdownTickBroadcast;
+
     // ========================================================================
     // SYNCHRONIZATION API
     // Called by staging zones via overlap, not directly by agents
@@ -300,6 +322,12 @@ public:
     // Query current match state
     UFUNCTION(BlueprintPure, Category = "Quidditch|Sync")
     EQuidditchMatchState GetMatchState() const { return MatchState; }
+
+    UFUNCTION(BlueprintPure, Category = "Quidditch|Sync")
+    int32 GetAgentsReadyCount() const { return AgentsReadyCount; }
+
+    UFUNCTION(BlueprintPure, Category = "Quidditch|Sync")
+    int32 GetRequiredAgentCount() const { return RequiredAgentCount; }
 
     // ========================================================================
     // DEBUG FUNCTIONS
@@ -333,6 +361,12 @@ protected:
     // Set to 1 or 2 in Blueprint to test with fewer agents
     UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Debug")
     int32 RequiredAgentOverride;
+
+    // Reference to the match start signal emitter placed in the level
+    // GameMode calls EmitSignal() on this at match start for whistle VFX + sound
+    // Assign in Blueprint to the BP_WorldSignalEmitter actor in the level
+    UPROPERTY(EditInstanceOnly, Category = "Quidditch|Signals")
+    AWorldSignalEmitter* MatchStartEmitter;
 
     // Maximum players per role per team
     UPROPERTY(EditDefaultsOnly, Category = "Quidditch|Teams")

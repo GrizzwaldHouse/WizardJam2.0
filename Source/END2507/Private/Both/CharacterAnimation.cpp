@@ -10,6 +10,28 @@
 #include "../END2507.h"
 DEFINE_LOG_CATEGORY_STATIC(LogCharacterAnimation, Log, All);
 
+UCharacterAnimation::UCharacterAnimation()
+    : Velocity(0.0f)
+    , MovementDirection(0.0f)
+    , SpineRotation(FRotator::ZeroRotator)
+    , SpineBoneName(TEXT("spine_02"))
+    , bIsFiring(false)
+    , FireCooldownTime(0.8f)
+    , bIsHit(false)
+    , bIsDead(false)
+    , bIsReloading(false)
+    , OwningCharacter(nullptr)
+    , ActionSlotName(TEXT("ActionSlotName"))
+    , FireAsset(nullptr)
+    , ReloadAsset(nullptr)
+    , HitAsset(nullptr)
+    , CurrentHitAsset(nullptr)
+    , CurrentDeathAsset(nullptr)
+    , CurrentReloadAsset(nullptr)
+    , bDebug(false)
+{
+}
+
 void UCharacterAnimation::NativeInitializeAnimation()
 {
     Super::NativeInitializeAnimation();
@@ -30,6 +52,17 @@ void UCharacterAnimation::NativeInitializeAnimation()
             UE_LOG(LogTemp, Error, TEXT("✗ Failed to cast pawn to BaseCharacter"));
         }
     }
+}
+
+void UCharacterAnimation::NativeUninitializeAnimation()
+{
+    // Unbind death delegate to prevent stale reference crash
+    if (OwningCharacter)
+    {
+        OwningCharacter->OnCharacterDeath.RemoveDynamic(this, &UCharacterAnimation::HandleCharacterDeath);
+    }
+
+    Super::NativeUninitializeAnimation();
 }
 
 void UCharacterAnimation::NativeThreadSafeUpdateAnimation(float DeltaSeconds)

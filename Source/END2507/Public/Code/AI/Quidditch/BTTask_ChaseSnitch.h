@@ -70,7 +70,7 @@ protected:
 
     // Blackboard key for Snitch location (Vector)
     // Updated continuously by BTService_FindSnitch
-    UPROPERTY(EditAnywhere, Category = "Snitch|Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Snitch|Blackboard")
     FBlackboardKeySelector SnitchLocationKey;
 
     // ========================================================================
@@ -79,12 +79,12 @@ protected:
 
     // Distance from Snitch to consider "caught" (in cm)
     // Default: 200cm (2 meters) - Snitch overlap detection handles actual catch
-    UPROPERTY(EditAnywhere, Category = "Snitch|Parameters", 
+    UPROPERTY(EditDefaultsOnly, Category = "Snitch|Parameters", 
         meta = (ClampMin = "50.0", ClampMax = "500.0"))
     float CatchRadius;
 
     // How close in altitude before stopping vertical movement
-    UPROPERTY(EditAnywhere, Category = "Snitch|Parameters",
+    UPROPERTY(EditDefaultsOnly, Category = "Snitch|Parameters",
         meta = (ClampMin = "10.0", ClampMax = "200.0"))
     float AltitudeTolerance;
 
@@ -93,12 +93,12 @@ protected:
     // ========================================================================
 
     // If true, enable boost when Snitch is far away
-    UPROPERTY(EditAnywhere, Category = "Snitch|Boost")
+    UPROPERTY(EditDefaultsOnly, Category = "Snitch|Boost")
     bool bUseBoostForPursuit;
 
     // Distance threshold to enable boost (if bUseBoostForPursuit is true)
     // Default: 1000cm (10 meters)
-    UPROPERTY(EditAnywhere, Category = "Snitch|Boost",
+    UPROPERTY(EditDefaultsOnly, Category = "Snitch|Boost",
         meta = (EditCondition = "bUseBoostForPursuit", ClampMin = "100.0"))
     float BoostDistanceThreshold;
 
@@ -107,13 +107,13 @@ protected:
     // ========================================================================
 
     // Multiplier for vertical input (1.0 = full speed, 0.5 = half speed)
-    UPROPERTY(EditAnywhere, Category = "Snitch|Movement",
+    UPROPERTY(EditDefaultsOnly, Category = "Snitch|Movement",
         meta = (ClampMin = "0.1", ClampMax = "1.0"))
     float VerticalInputMultiplier;
 
     // Maximum vertical input change per second (smoothing)
     // Prevents jerky altitude changes when Snitch changes height quickly
-    UPROPERTY(EditAnywhere, Category = "Snitch|Movement",
+    UPROPERTY(EditDefaultsOnly, Category = "Snitch|Movement",
         meta = (ClampMin = "0.5", ClampMax = "10.0"))
     float MaxVerticalInputChangeRate;
 

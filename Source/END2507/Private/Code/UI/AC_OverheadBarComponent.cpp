@@ -61,6 +61,22 @@ void UAC_OverheadBarComponent::BeginPlay()
 		TEXT("[%s] Overhead bar bound to delegates"), *Owner->GetName());
 }
 
+void UAC_OverheadBarComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// Unbind health and stamina delegates to prevent stale reference crash
+	if (HealthComp)
+	{
+		HealthComp->OnHealthChanged.RemoveDynamic(this, &UAC_OverheadBarComponent::HandleHealthChanged);
+	}
+
+	if (StaminaComp)
+	{
+		StaminaComp->OnStaminaChanged.RemoveDynamic(this, &UAC_OverheadBarComponent::HandleStaminaChanged);
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void UAC_OverheadBarComponent::CreateWidgetComponent()
 {
 	AActor* Owner = GetOwner();

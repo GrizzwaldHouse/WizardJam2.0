@@ -126,24 +126,25 @@ public:
     // PUBLIC API
     // ========================================================================
 
-    /** Get the broom component */
+    // Get the broom component
     UFUNCTION(BlueprintPure, Category = "Wizard|Flight")
     UAC_BroomComponent* GetBroomComponent() const { return BroomComponent; }
 
-    /** Get stamina component */
+    // Get stamina component
     UFUNCTION(BlueprintPure, Category = "Wizard|Stamina")
     UAC_StaminaComponent* GetStaminaComponent() const { return StaminaComponent; }
 
-    /** Get health component */
+    // Get health component
     UFUNCTION(BlueprintPure, Category = "Wizard|Health")
     UAC_HealthComponent* GetHealthComponent() const { return HealthComponent; }
 
-    /** Check if player is currently flying */
+    // Check if player is currently flying
     UFUNCTION(BlueprintPure, Category = "Wizard|Flight")
     bool IsFlying() const;
 
 protected:
     virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     virtual void Tick(float DeltaTime) override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
@@ -159,10 +160,10 @@ protected:
     // QUIDDITCH INPUT HANDLERS
     // ========================================================================
 
-    /** Handle throw ball input */
+    // Handle throw ball input
     void HandleThrowBallInput();
 
-    /** Handle toggle flight input */
+    // Handle toggle flight input
     void HandleToggleFlightInput();
 
     // ========================================================================
@@ -185,21 +186,21 @@ protected:
     // CONFIGURATION
     // ========================================================================
 
-    /** Player's team ID (0 = player team, 1 = AI team typically) */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wizard|Team")
+    // Player's team ID (0 = player team, 1 = AI team typically)
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Wizard|Team")
     int32 PlayerTeamID;
 
-    /** Player's assigned Quidditch role */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wizard|Quidditch")
+    // Player's assigned Quidditch role
+    UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Wizard|Quidditch")
     EQuidditchRole QuidditchRole;
 
-    /** Throw force when throwing balls */
+    // Throw force when throwing balls
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Wizard|Combat")
     float BallThrowForce;
 
-    /** HUD widget classes to spawn - designer adds multiple widgets to this array
-     *  All widgets are created and added to viewport at BeginPlay
-     *  Example: Add WBP_WizardJamHUD for spell/stamina, WBP_PlayerHUD for ammo */
+    // HUD widget classes to spawn - designer adds multiple widgets to this array
+    // All widgets are created and added to viewport at BeginPlay
+    // Example: Add WBP_WizardJamHUD for spell/stamina, WBP_PlayerHUD for ammo
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Wizard|UI")
     TArray<TSubclassOf<UUserWidget>> HUDWidgetClasses;
 
@@ -207,11 +208,11 @@ protected:
     // ADDITIONAL INPUT ACTIONS
     // ========================================================================
 
-    /** Input action for throwing held ball */
+    // Input action for throwing held ball
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input|Quidditch")
     UInputAction* ThrowBallAction;
 
-    /** Input action for toggling flight (alternative to interact with broom) */
+    // Input action for toggling flight (alternative to interact with broom)
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Input|Quidditch")
     UInputAction* ToggleFlightAction;
 
@@ -220,17 +221,17 @@ private:
     // RUNTIME STATE
     // ========================================================================
 
-    /** Team ID stored for interface */
+    // Team ID stored for interface
     FGenericTeamId TeamId;
 
-    /** Currently held ball type */
+    // Currently held ball type
     EQuidditchBall HeldBall;
 
-    /** Reference to held ball actor */
+    // Reference to held ball actor
     UPROPERTY()
     AActor* HeldBallActor;
 
-    /** HUD widget instances - matches HUDWidgetClasses array */
+    // HUD widget instances - matches HUDWidgetClasses array
     UPROPERTY()
     TArray<UUserWidget*> HUDWidgetInstances;
 

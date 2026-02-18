@@ -9,16 +9,9 @@
 #include "CoreMinimal.h"
 #include "SpellChannelTypes.generated.h"
 
-/**
- * ESpellChannel
- * Represents the four elemental spell types in WizardJam.
- * Used for:
- *   - SpellCollectible pickup identification
- *   - ElementalWall matching requirements
- *   - Player spell inventory tracking
- *   - Projectile element typing
- *   - Arena zone gating
- */
+// ESpellChannel - Represents the four elemental spell types in WizardJam.
+// Used for: SpellCollectible pickup identification, ElementalWall matching,
+// Player spell inventory tracking, Projectile element typing, Arena zone gating
 UENUM(BlueprintType)
 enum class ESpellChannel : uint8
 {

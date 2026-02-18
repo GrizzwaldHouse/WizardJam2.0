@@ -41,10 +41,10 @@ public:
 
 protected:
     // Blueprint class for broom to spawn (set in BT defaults)
-    UPROPERTY(EditAnywhere, Category = "Debug")
+    UPROPERTY(EditDefaultsOnly, Category = "Debug")
     TSubclassOf<ABroomActor> BroomClass;
 
     // Offset from AI location to spawn broom
-    UPROPERTY(EditAnywhere, Category = "Debug")
+    UPROPERTY(EditDefaultsOnly, Category = "Debug")
     FVector SpawnOffset;
 };

@@ -25,6 +25,7 @@
 // Forward declarations
 class AAIController;
 class AActor;
+class AQuidditchGameMode;
 
 UCLASS(meta = (DisplayName = "Find Quaffle"))
 class END2507_API UBTService_FindQuaffle : public UBTService
@@ -54,23 +55,23 @@ protected:
     // ========================================================================
 
     // Quaffle actor reference (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector QuaffleActorKey;
 
     // Quaffle world location (Vector)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector QuaffleLocationKey;
 
     // Quaffle velocity for prediction (Vector)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector QuaffleVelocityKey;
 
     // True if Quaffle is free (not held) (Bool)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector IsQuaffleFreeKey;
 
     // True if teammate has Quaffle (Bool)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector TeammateHasQuaffleKey;
 
     // ========================================================================
@@ -78,14 +79,20 @@ protected:
     // ========================================================================
 
     // Class of Quaffle actor to search for
-    UPROPERTY(EditAnywhere, Category = "Perception")
+    UPROPERTY(EditDefaultsOnly, Category = "Perception")
     TSubclassOf<AActor> QuaffleClass;
 
     // Maximum range to perceive Quaffle
-    UPROPERTY(EditAnywhere, Category = "Perception")
+    UPROPERTY(EditDefaultsOnly, Category = "Perception")
     float MaxQuaffleRange;
 
 private:
+    // Cached game mode reference to avoid repeated casts each tick
+    TWeakObjectPtr<AQuidditchGameMode> CachedGameMode;
+
+    // Resolves and caches the QuidditchGameMode from the world
+    AQuidditchGameMode* GetGameMode(UWorld* World);
+
     // Search perception for Quaffle
     AActor* FindQuaffleInPerception(AAIController* AIController) const;
 
@@ -96,6 +103,6 @@ private:
     bool IsQuaffleHeld(AActor* Quaffle, AActor*& OutHolder) const;
 
     // Check if holder is on same team
-    bool IsHolderTeammate(AActor* Holder, APawn* OwnerPawn) const;
+    bool IsHolderTeammate(AActor* Holder, APawn* OwnerPawn);
 };
 

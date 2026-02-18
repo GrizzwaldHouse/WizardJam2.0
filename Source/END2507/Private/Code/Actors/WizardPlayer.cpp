@@ -14,7 +14,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "Kismet/GameplayStatics.h"
 #include "EngineUtils.h"
 
 // Project includes
@@ -122,6 +121,28 @@ void AWizardPlayer::BeginPlay()
         *GetName(),
         PlayerTeamID,
         *QuidditchHelpers::RoleToString(QuidditchRole));
+}
+
+void AWizardPlayer::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    // Unbind component delegates to prevent stale reference crash
+    if (HealthComponent)
+    {
+        HealthComponent->OnHealthChanged.RemoveDynamic(this, &AWizardPlayer::OnHealthChanged);
+        HealthComponent->OnDeath.RemoveDynamic(this, &AWizardPlayer::OnDeath);
+    }
+
+    if (BroomComponent)
+    {
+        BroomComponent->OnFlightStateChanged.RemoveDynamic(this, &AWizardPlayer::OnFlightStateChanged);
+    }
+
+    if (StaminaComponent)
+    {
+        StaminaComponent->OnStaminaDepleted.RemoveDynamic(this, &AWizardPlayer::OnStaminaDepleted);
+    }
+
+    Super::EndPlay(EndPlayReason);
 }
 
 void AWizardPlayer::Tick(float DeltaTime)

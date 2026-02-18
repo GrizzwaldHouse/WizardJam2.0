@@ -29,6 +29,7 @@
 class AAIController;
 class AActor;
 class APawn;
+class AQuidditchGameMode;
 
 UCLASS(meta = (DisplayName = "Find Bludger"))
 class END2507_API UBTService_FindBludger : public UBTService
@@ -58,27 +59,27 @@ protected:
     // ========================================================================
 
     // Nearest Bludger actor (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector NearestBludgerKey;
 
     // Bludger location (Vector)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector BludgerLocationKey;
 
     // Bludger velocity for interception (Vector)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector BludgerVelocityKey;
 
     // Most threatening Bludger - closest to a teammate (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector ThreateningBludgerKey;
 
     // The teammate being threatened (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector ThreatenedTeammateKey;
 
     // Best enemy target for offensive Bludger hit (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector BestEnemyTargetKey;
 
     // ========================================================================
@@ -86,22 +87,28 @@ protected:
     // ========================================================================
 
     // Class of Bludger actor to search for
-    UPROPERTY(EditAnywhere, Category = "Perception")
+    UPROPERTY(EditDefaultsOnly, Category = "Perception")
     TSubclassOf<AActor> BludgerClass;
 
     // Maximum range to perceive Bludgers
-    UPROPERTY(EditAnywhere, Category = "Perception")
+    UPROPERTY(EditDefaultsOnly, Category = "Perception")
     float MaxBludgerRange;
 
     // Distance threshold to consider Bludger a threat to teammate
-    UPROPERTY(EditAnywhere, Category = "Threat")
+    UPROPERTY(EditDefaultsOnly, Category = "Threat")
     float ThreatRadius;
 
     // Prefer hitting Bludger at enemies close to our goal
-    UPROPERTY(EditAnywhere, Category = "Targeting")
+    UPROPERTY(EditDefaultsOnly, Category = "Targeting")
     float EnemyPriorityRadius;
 
 private:
+    // Cached game mode reference to avoid repeated casts each tick
+    TWeakObjectPtr<AQuidditchGameMode> CachedGameMode;
+
+    // Resolves and caches the QuidditchGameMode from the world
+    AQuidditchGameMode* GetGameMode(UWorld* World);
+
     // Search perception for all Bludgers
     TArray<AActor*> FindBludgersInPerception(AAIController* AIController) const;
 
@@ -110,9 +117,9 @@ private:
 
     // Find Bludger most threatening to teammates (MsPacMan INVERTED)
     AActor* FindMostThreateningBludger(const TArray<AActor*>& Bludgers,
-        APawn* OwnerPawn, UWorld* World, APawn*& OutThreatenedTeammate) const;
+        APawn* OwnerPawn, UWorld* World, APawn*& OutThreatenedTeammate);
 
     // Find best enemy target for offensive play
-    APawn* FindBestEnemyTarget(APawn* OwnerPawn, UWorld* World) const;
+    APawn* FindBestEnemyTarget(APawn* OwnerPawn, UWorld* World);
 };
 

@@ -46,42 +46,42 @@ public:
 
 protected:
 	// Blackboard key to write home location (Vector)
-	UPROPERTY(EditAnywhere, Category = "Blackboard")
+	UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
 	FBlackboardKeySelector HomeLocationKey;
 
 	// Arrival radius (default: 200 units)
-	UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "50.0", ClampMax = "500.0"))
+	UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "50.0", ClampMax = "500.0"))
 	float ArrivalRadius;
 
 	// Flight speed multiplier (default: 1.0 = normal speed)
-	UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "0.5", ClampMax = "2.0"))
+	UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "0.5", ClampMax = "2.0"))
 	float FlightSpeedMultiplier;
 
 	// Enable boost when far from home
-	UPROPERTY(EditAnywhere, Category = "Navigation")
+	UPROPERTY(EditDefaultsOnly, Category = "Navigation")
 	bool bUseBoostWhenFar;
 
 	// Distance to enable boost (default: 500 units)
-	UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "100.0", EditCondition = "bUseBoostWhenFar"))
+	UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "100.0", EditCondition = "bUseBoostWhenFar"))
 	float BoostDistanceThreshold;
 
 	// Hysteresis threshold - boost turns OFF when distance drops below this value
 	// Set lower than BoostDistanceThreshold to prevent oscillation
-	UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "50.0", EditCondition = "bUseBoostWhenFar"))
+	UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "50.0", EditCondition = "bUseBoostWhenFar"))
 	float BoostDisableThreshold;
 
 	// Minimum stamina percent (0-1) required to enable boost - prevents depleting all stamina
-	UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "0.1", ClampMax = "0.9", EditCondition = "bUseBoostWhenFar"))
+	UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "0.1", ClampMax = "0.9", EditCondition = "bUseBoostWhenFar"))
 	float MinStaminaForBoost;
 
 	// Altitude adjustment scale (lower = steeper climbs)
-	UPROPERTY(EditAnywhere, Category = "Navigation", meta = (ClampMin = "50.0", ClampMax = "500.0"))
+	UPROPERTY(EditDefaultsOnly, Category = "Navigation", meta = (ClampMin = "50.0", ClampMax = "500.0"))
 	float AltitudeScale;
 
 	// Slot name for home staging zone lookup - must match StagingSlotName on the zone actor
 	// Examples: "Seeker", "Chaser_Left", "Chaser_Center", "Chaser_Right", "Beater_A", "Beater_B", "Keeper"
 	// If empty/None, defaults to the role name (e.g., "Seeker" for a Seeker agent)
-	UPROPERTY(EditAnywhere, Category = "Staging")
+	UPROPERTY(EditDefaultsOnly, Category = "Staging")
 	FName SlotName;
 
 	// ========================================================================
@@ -89,12 +89,12 @@ protected:
 	// ========================================================================
 
 	// Enable timeout - if agent can't reach home in time, task fails
-	UPROPERTY(EditAnywhere, Category = "Timeout")
+	UPROPERTY(EditDefaultsOnly, Category = "Timeout")
 	bool bEnableTimeout;
 
 	// Maximum time (seconds) to reach home before failing
 	// Only used if bEnableTimeout is true
-	UPROPERTY(EditAnywhere, Category = "Timeout", meta = (ClampMin = "5.0", ClampMax = "120.0", EditCondition = "bEnableTimeout"))
+	UPROPERTY(EditDefaultsOnly, Category = "Timeout", meta = (ClampMin = "5.0", ClampMax = "120.0", EditCondition = "bEnableTimeout"))
 	float TimeoutDuration;
 
 private:

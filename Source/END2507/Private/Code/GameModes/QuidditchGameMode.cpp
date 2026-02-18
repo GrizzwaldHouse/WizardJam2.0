@@ -19,6 +19,7 @@ AQuidditchGameMode::AQuidditchGameMode()
     : SnitchCatchPoints(150)
     , QuaffleGoalPoints(10)
     , RequiredAgentOverride(0)
+    , MatchStartEmitter(nullptr)
     , MaxSeekersPerTeam(1)
     , MaxChasersPerTeam(3)
     , MaxBeatersPerTeam(2)
@@ -77,6 +78,9 @@ void AQuidditchGameMode::BeginPlay()
     UE_LOG(LogQuidditchGameMode, Display,
         TEXT("[QuidditchGameMode] Match initialized | Snitch=%d pts | Goal=%d pts | RequiredAgents=%d"),
         SnitchCatchPoints, QuaffleGoalPoints, RequiredAgentCount);
+
+    // Broadcast initial count for debug HUD
+    OnAgentCountUpdated.Broadcast(0, RequiredAgentCount);
 
     // Start in Initializing state
     TransitionToState(EQuidditchMatchState::Initializing);
@@ -313,6 +317,9 @@ void AQuidditchGameMode::NotifySnitchCaught(APawn* CatchingSeeker, EQuidditchTea
 
     bSnitchCaught = true;
 
+    // Transition state machine BEFORE broadcasts so listeners see correct state
+    TransitionToState(EQuidditchMatchState::SnitchCaught);
+
     // Award snitch points
     AddTeamScore(Team, SnitchCatchPoints, CatchingSeeker);
 
@@ -340,6 +347,9 @@ void AQuidditchGameMode::NotifySnitchCaught(APawn* CatchingSeeker, EQuidditchTea
     // End match
     FString Reason = FString::Printf(TEXT("Snitch caught! Final: %d - %d"), TeamAScore, TeamBScore);
     EndMatch(Winner == EQuidditchTeam::TeamA, Reason);  // Assuming player is Team A
+
+    // Final state transition after EndMatch cleanup
+    TransitionToState(EQuidditchMatchState::Ended);
 }
 
 // ============================================================================
@@ -480,6 +490,9 @@ void AQuidditchGameMode::HandleAgentReachedStagingZone(APawn* Agent)
     // Broadcast for HUD feedback
     OnAgentReadyAtStart.Broadcast(Agent, AgentsReadyCount);
 
+    // Broadcast count update for debug instrumentation
+    OnAgentCountUpdated.Broadcast(AgentsReadyCount, RequiredAgentCount);
+
     // Transition to WaitingForReady if this is the first ready agent
     if (MatchState == EQuidditchMatchState::Initializing || MatchState == EQuidditchMatchState::FlyingToStart)
     {
@@ -516,6 +529,9 @@ void AQuidditchGameMode::HandleAgentLeftStagingZone(APawn* Agent)
     UE_LOG(LogQuidditchGameMode, Display,
         TEXT("[QuidditchGameMode] Agent '%s' LEFT staging zone | %d/%d ready"),
         *Agent->GetName(), AgentsReadyCount, RequiredAgentCount);
+
+    // Broadcast count update for debug instrumentation
+    OnAgentCountUpdated.Broadcast(AgentsReadyCount, RequiredAgentCount);
 
     // If countdown was running and we lost a ready agent, cancel it
     if (MatchState == EQuidditchMatchState::Countdown)
@@ -574,6 +590,9 @@ void AQuidditchGameMode::OnCountdownTick()
         TEXT("[QuidditchGameMode] Countdown: %d..."),
         CountdownSecondsRemaining);
 
+    // Broadcast for debug HUD countdown display
+    OnCountdownTickBroadcast.Broadcast(CountdownSecondsRemaining);
+
     if (CountdownSecondsRemaining <= 0)
     {
         OnCountdownComplete();
@@ -609,6 +628,15 @@ void AQuidditchGameMode::OnCountdownComplete()
 
     // Emit WorldSignal for orchestration systems (QuidditchBallSpawner listens for this)
     EmitWorldSignal(SignalTypeNames::QuidditchMatchStart);
+
+    // Trigger physical emitter for whistle sound + VFX (authoritative from GameMode)
+    if (MatchStartEmitter)
+    {
+        MatchStartEmitter->EmitSignal();
+    }
+
+    // Broadcast final count for debug instrumentation
+    OnAgentCountUpdated.Broadcast(AgentsReadyCount, RequiredAgentCount);
 }
 
 FVector AQuidditchGameMode::GetStagingZoneLocation(EQuidditchTeam InTeam, EQuidditchRole InRole, FName InSlotName) const
@@ -806,6 +834,12 @@ void AQuidditchGameMode::DEBUG_ForceStartMatch()
 
     // Emit WorldSignal for orchestration systems (QuidditchBallSpawner listens for this)
     EmitWorldSignal(SignalTypeNames::QuidditchMatchStart);
+
+    // Trigger physical emitter for whistle sound + VFX
+    if (MatchStartEmitter)
+    {
+        MatchStartEmitter->EmitSignal();
+    }
 
     UE_LOG(LogQuidditchGameMode, Warning, TEXT("[DEBUG] Match force-started! OnMatchStarted broadcast sent."));
 }

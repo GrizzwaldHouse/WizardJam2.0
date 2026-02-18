@@ -56,18 +56,18 @@ public:
 
 protected:
     // Filter to only find actors of this class (null = any actor)
-    UPROPERTY(EditAnywhere, Category = "Collectible")
+    UPROPERTY(EditDefaultsOnly, Category = "Collectible")
     TSubclassOf<AActor> CollectibleClass;
 
     // Blackboard key to store the found collectible (Object type)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector OutputKey;
 
     // Optional: Only find collectibles that grant this specific channel
-    UPROPERTY(EditAnywhere, Category = "Collectible")
+    UPROPERTY(EditDefaultsOnly, Category = "Collectible")
     FName RequiredGrantChannel;
 
     // Maximum distance to search (0 = unlimited)
-    UPROPERTY(EditAnywhere, Category = "Collectible", meta = (ClampMin = "0.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Collectible", meta = (ClampMin = "0.0"))
     float MaxSearchDistance;
 };

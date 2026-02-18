@@ -115,6 +115,18 @@ void ASpawner::BeginPlay()
 	}
 }
 
+void ASpawner::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	// Unbind health component delegates
+	if (HealthComponent)
+	{
+		HealthComponent->OnHealthChanged.RemoveDynamic(this, &ASpawner::OnHealthChanged);
+		HealthComponent->OnDeath.RemoveDynamic(this, &ASpawner::OnDeath);
+	}
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void ASpawner::SetupBarrelAppearance()
 {
 	if (!BarrelMesh)

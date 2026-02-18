@@ -48,11 +48,11 @@ protected:
     // ========================================================================
 
     // Target actor to intercept (e.g., Snitch)
-    UPROPERTY(EditAnywhere, Category = "Blackboard|Input")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard|Input")
     FBlackboardKeySelector TargetActorKey;
 
     // Target's current velocity (optional - will calculate if not provided)
-    UPROPERTY(EditAnywhere, Category = "Blackboard|Input")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard|Input")
     FBlackboardKeySelector TargetVelocityKey;
 
     // ========================================================================
@@ -60,11 +60,11 @@ protected:
     // ========================================================================
 
     // Calculated intercept point
-    UPROPERTY(EditAnywhere, Category = "Blackboard|Output")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard|Output")
     FBlackboardKeySelector InterceptPointKey;
 
     // Estimated time to intercept
-    UPROPERTY(EditAnywhere, Category = "Blackboard|Output")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard|Output")
     FBlackboardKeySelector TimeToInterceptKey;
 
     // ========================================================================
@@ -72,19 +72,19 @@ protected:
     // ========================================================================
 
     // Pursuer's maximum speed (units per second)
-    UPROPERTY(EditAnywhere, Category = "Intercept", meta = (ClampMin = "100.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Intercept", meta = (ClampMin = "100.0"))
     float PursuerMaxSpeed;
 
     // Maximum prediction time (seconds) - prevents chasing forever
-    UPROPERTY(EditAnywhere, Category = "Intercept", meta = (ClampMin = "0.5", ClampMax = "10.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Intercept", meta = (ClampMin = "0.5", ClampMax = "10.0"))
     float MaxPredictionTime;
 
     // Minimum distance to switch from intercept to direct pursuit
-    UPROPERTY(EditAnywhere, Category = "Intercept")
+    UPROPERTY(EditDefaultsOnly, Category = "Intercept")
     float DirectPursuitDistance;
 
     // How far ahead to lead the target (multiplier)
-    UPROPERTY(EditAnywhere, Category = "Intercept", meta = (ClampMin = "0.5", ClampMax = "2.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Intercept", meta = (ClampMin = "0.5", ClampMax = "2.0"))
     float LeadFactor;
 
 private:

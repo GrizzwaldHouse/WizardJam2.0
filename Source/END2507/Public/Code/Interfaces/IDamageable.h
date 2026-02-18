@@ -13,9 +13,6 @@ class UIDamageable : public UInterface
 	GENERATED_BODY()
 };
 
-/**
- * 
- */
 class END2507_API IIDamageable
 {
 	GENERATED_BODY()

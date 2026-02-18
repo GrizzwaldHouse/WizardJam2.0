@@ -10,11 +10,10 @@
 #include "../END2507.h"
 DEFINE_LOG_CATEGORY_STATIC(LogAttackTask, Log, All);
 UBTTask_CodeEnemyAttack::UBTTask_CodeEnemyAttack()
+    : ActionFinishedKeyName(TEXT("ActionFinished"))
 {
 	NodeName = "CodeAttack";
-    bNotifyTick = true; 
- 
-
+    bNotifyTick = true;
 }
 void UBTTask_CodeEnemyAttack::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
@@ -27,11 +26,11 @@ void UBTTask_CodeEnemyAttack::TickTask(UBehaviorTreeComponent& OwnerComp, uint8*
     }
     // Check if action finished
     // Check if rifle fired and agent signaled completion
-    bool bActionFinished = BlackboardComp->GetValueAsBool(TEXT("ActionFinished"));
+    bool bActionFinished = BlackboardComp->GetValueAsBool(ActionFinishedKeyName);
     if (bActionFinished)
     {
         // Reset flag for next attack
-        BlackboardComp->SetValueAsBool(TEXT("ActionFinished"), false);
+        BlackboardComp->SetValueAsBool(ActionFinishedKeyName, false);
 
         UE_LOG(LogAttackTask, Log, TEXT("ActionFinished detected, completing attack task"));
         FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);

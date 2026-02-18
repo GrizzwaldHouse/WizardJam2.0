@@ -5,6 +5,21 @@
 #include "Code/UI/OverheadBarWidget.h"
 #include "Components/ProgressBar.h"
 
+UOverheadBarWidget::UOverheadBarWidget(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
+    , HealthProgressBar(nullptr)
+    , StaminaProgressBar(nullptr)
+    , HealthColorHigh(FLinearColor::Green)
+    , HealthColorMedium(FLinearColor::Yellow)
+    , HealthColorLow(FLinearColor::Red)
+    , StaminaColorHigh(0.0f, 1.0f, 1.0f) // Cyan
+    , StaminaColorLow(1.0f, 0.5f, 0.0f) // Orange
+    , FullHealthThreshold(0.99f)
+    , FullStaminaThreshold(0.99f)
+    , CurrentHealthRatio(1.0f)
+    , CurrentStaminaRatio(1.0f)
+{
+}
 
 void UOverheadBarWidget::UpdateHealth(float HealthRatio)
 {

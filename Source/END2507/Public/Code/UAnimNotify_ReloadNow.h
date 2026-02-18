@@ -8,9 +8,6 @@
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "UAnimNotify_ReloadNow.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class END2507_API UUAnimNotify_ReloadNow : public UAnimNotify
 {

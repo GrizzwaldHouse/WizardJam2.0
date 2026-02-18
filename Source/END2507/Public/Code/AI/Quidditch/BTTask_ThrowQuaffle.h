@@ -57,15 +57,15 @@ protected:
     // ========================================================================
 
     // Quaffle actor currently held (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector HeldQuaffleKey;
 
     // Target to throw at - goal or teammate (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector ThrowTargetKey;
 
     // Alternative: throw to specific location (Vector)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector ThrowLocationKey;
 
     // ========================================================================
@@ -73,27 +73,27 @@ protected:
     // ========================================================================
 
     // Type of throw to execute
-    UPROPERTY(EditAnywhere, Category = "Throw")
+    UPROPERTY(EditDefaultsOnly, Category = "Throw")
     EQuaffleThrowType ThrowType;
 
     // Speed of thrown Quaffle
-    UPROPERTY(EditAnywhere, Category = "Throw")
+    UPROPERTY(EditDefaultsOnly, Category = "Throw")
     float ThrowSpeed;
 
     // Lead factor for moving target prediction (1.0 = perfect lead)
-    UPROPERTY(EditAnywhere, Category = "Throw")
+    UPROPERTY(EditDefaultsOnly, Category = "Throw")
     float LeadFactor;
 
     // Arc height for lob passes (0 = straight throw)
-    UPROPERTY(EditAnywhere, Category = "Throw")
+    UPROPERTY(EditDefaultsOnly, Category = "Throw")
     float ArcHeight;
 
     // Minimum range to attempt throw
-    UPROPERTY(EditAnywhere, Category = "Throw")
+    UPROPERTY(EditDefaultsOnly, Category = "Throw")
     float MinThrowRange;
 
     // Maximum range for accurate throw
-    UPROPERTY(EditAnywhere, Category = "Throw")
+    UPROPERTY(EditDefaultsOnly, Category = "Throw")
     float MaxThrowRange;
 
 private:

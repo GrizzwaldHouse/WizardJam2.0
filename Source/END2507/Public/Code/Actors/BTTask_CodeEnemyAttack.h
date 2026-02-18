@@ -19,9 +19,10 @@ public:
    
 
 protected:
-   
+
     virtual void  TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)override;
 
-
-    
+private:
+    // Blackboard key name for action finished flag
+    FName ActionFinishedKeyName;
 };

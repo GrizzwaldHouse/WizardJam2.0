@@ -14,17 +14,11 @@ class ABaseAgent;
 class UMaterialInstanceDynamic;
 class UBoxComponent;
 class IFactionInterface;
-/**
- * Delegate broadcasted when an agent is spawned
- * @param SpawnedAgent - The agent that was just spawned
- * @param FactionColor - The color assigned to this agent's faction
- */
+// Delegate broadcasted when an agent is spawned
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAgentSpawned, ABaseAgent*, SpawnedAgent, FLinearColor, FactionColor);
-/**
- * ASpawner spawns agents at intervals and broadcasts faction colors to them
- * Handles damage and destruction through HealthComponent integration
- * Usage: Place in level, configure AgentClassToSpawn and FactionColor in Blueprint
- */
+// ASpawner spawns agents at intervals and broadcasts faction colors to them
+// Handles damage and destruction through HealthComponent integration
+// Usage: Place in level, configure AgentClassToSpawn and FactionColor in Blueprint
 UCLASS()
 class END2507_API ASpawner : public AActor
 {
@@ -48,6 +42,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	// ===== COMPONENTS =====
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")

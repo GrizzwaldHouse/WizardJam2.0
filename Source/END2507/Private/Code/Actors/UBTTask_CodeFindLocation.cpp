@@ -9,7 +9,10 @@
 #include "Engine/World.h"
 #include "../END2507.h"
 UUBTTask_CodeFindLocation::UUBTTask_CodeFindLocation()
-{	// Set the task name for the behavior tree editor
+    : SearchRadius(1000.0f)
+    , LocationKeyName(TEXT("Location"))
+{
+	// Set the task name for the behavior tree editor
 	NodeName = TEXT("Find Location");
 	bNotifyTick = false;
 	bNotifyTaskFinished = false;

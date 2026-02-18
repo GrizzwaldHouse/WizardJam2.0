@@ -49,7 +49,7 @@ protected:
     // ========================================================================
 
     // Target Snitch actor to catch (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector SnitchActorKey;
 
     // ========================================================================
@@ -57,15 +57,15 @@ protected:
     // ========================================================================
 
     // Distance within which catch attempt succeeds
-    UPROPERTY(EditAnywhere, Category = "Catch")
+    UPROPERTY(EditDefaultsOnly, Category = "Catch")
     float CatchRadius;
 
     // Points awarded for catching Snitch (standard: 150)
-    UPROPERTY(EditAnywhere, Category = "Catch")
+    UPROPERTY(EditDefaultsOnly, Category = "Catch")
     int32 SnitchPointValue;
 
     // Should destroy Snitch actor on catch
-    UPROPERTY(EditAnywhere, Category = "Catch")
+    UPROPERTY(EditDefaultsOnly, Category = "Catch")
     bool bDestroySnitchOnCatch;
 
 private:

@@ -13,7 +13,6 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/MovementComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "EngineUtils.h"
 
 DEFINE_LOG_CATEGORY(LogFlockSteering);

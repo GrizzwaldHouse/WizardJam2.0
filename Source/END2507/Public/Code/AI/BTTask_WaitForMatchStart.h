@@ -59,15 +59,15 @@ protected:
 
     // Blackboard key to check for match started (Bool)
     // Set by controller's HandleMatchStarted() delegate handler
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector MatchStartedKey;
 
     // Optional: Play hover animation while waiting
-    UPROPERTY(EditAnywhere, Category = "Animation")
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
     bool bPlayHoverAnimation;
 
     // Tick interval for checking (not polling GameMode - just checking BB)
-    UPROPERTY(EditAnywhere, Category = "Performance", meta = (ClampMin = "0.1", ClampMax = "1.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Performance", meta = (ClampMin = "0.1", ClampMax = "1.0"))
     float CheckInterval;
 
 private:

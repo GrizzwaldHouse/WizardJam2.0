@@ -45,11 +45,11 @@ public:
 
 protected:
     // The channel name to check for (e.g., "Broom", "Fire", "Teleport")
-    UPROPERTY(EditAnywhere, Category = "Channel")
+    UPROPERTY(EditDefaultsOnly, Category = "Channel")
     FName ChannelName;
 
     // If true, decorator passes when channel is MISSING
     // If false, decorator passes when channel is PRESENT
-    UPROPERTY(EditAnywhere, Category = "Channel")
+    UPROPERTY(EditDefaultsOnly, Category = "Channel")
     bool bInvertResult;
 };

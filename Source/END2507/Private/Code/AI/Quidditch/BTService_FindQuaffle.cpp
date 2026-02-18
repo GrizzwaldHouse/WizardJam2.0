@@ -250,7 +250,16 @@ bool UBTService_FindQuaffle::IsQuaffleHeld(AActor* Quaffle, AActor*& OutHolder) 
     return false;
 }
 
-bool UBTService_FindQuaffle::IsHolderTeammate(AActor* Holder, APawn* OwnerPawn) const
+AQuidditchGameMode* UBTService_FindQuaffle::GetGameMode(UWorld* World)
+{
+    if (!CachedGameMode.IsValid() && World)
+    {
+        CachedGameMode = Cast<AQuidditchGameMode>(World->GetAuthGameMode());
+    }
+    return CachedGameMode.Get();
+}
+
+bool UBTService_FindQuaffle::IsHolderTeammate(AActor* Holder, APawn* OwnerPawn)
 {
     if (!Holder || !OwnerPawn)
     {
@@ -269,7 +278,7 @@ bool UBTService_FindQuaffle::IsHolderTeammate(AActor* Holder, APawn* OwnerPawn) 
         return false;
     }
 
-    AQuidditchGameMode* GameMode = Cast<AQuidditchGameMode>(World->GetAuthGameMode());
+    AQuidditchGameMode* GameMode = GetGameMode(World);
     if (!GameMode)
     {
         return false;

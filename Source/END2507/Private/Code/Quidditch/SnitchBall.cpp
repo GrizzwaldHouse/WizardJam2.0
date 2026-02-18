@@ -171,6 +171,18 @@ void ASnitchBall::PossessedBy(AController* NewController)
     }
 }
 
+void ASnitchBall::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    // Unbind from controller perception delegates
+    if (SnitchController)
+    {
+        SnitchController->OnPursuerDetected.RemoveDynamic(this, &ASnitchBall::HandlePursuerDetected);
+        SnitchController->OnPursuerLost.RemoveDynamic(this, &ASnitchBall::HandlePursuerLost);
+    }
+
+    Super::EndPlay(EndPlayReason);
+}
+
 void ASnitchBall::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);

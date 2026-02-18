@@ -55,11 +55,11 @@ protected:
     // ========================================================================
 
     // Goal center position to defend (Vector) - typically assigned at setup
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector GoalCenterKey;
 
     // Current threat - Quaffle or enemy with Quaffle (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector ThreatActorKey;
 
     // ========================================================================
@@ -67,7 +67,7 @@ protected:
     // ========================================================================
 
     // Calculated optimal defense position (Vector)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector DefensePositionKey;
 
     // ========================================================================
@@ -75,23 +75,23 @@ protected:
     // ========================================================================
 
     // How far Keeper can move from goal center
-    UPROPERTY(EditAnywhere, Category = "Positioning")
+    UPROPERTY(EditDefaultsOnly, Category = "Positioning")
     float MaxDefenseRadius;
 
     // Minimum distance to stay from goal center (don't enter goal)
-    UPROPERTY(EditAnywhere, Category = "Positioning")
+    UPROPERTY(EditDefaultsOnly, Category = "Positioning")
     float MinDefenseRadius;
 
     // Height offset from goal center
-    UPROPERTY(EditAnywhere, Category = "Positioning")
+    UPROPERTY(EditDefaultsOnly, Category = "Positioning")
     float DefenseHeight;
 
     // How aggressively to move toward threat (0-1)
-    UPROPERTY(EditAnywhere, Category = "Positioning", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Positioning", meta = (ClampMin = "0.0", ClampMax = "1.0"))
     float ThreatResponseFactor;
 
     // Distance at which threat response is maximum
-    UPROPERTY(EditAnywhere, Category = "Positioning")
+    UPROPERTY(EditDefaultsOnly, Category = "Positioning")
     float MaxThreatDistance;
 
 private:

@@ -6,9 +6,6 @@
 #include "Engine/GameInstance.h"
 #include "CodeGameInstance.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class END2507_API UCodeGameInstance : public UGameInstance
 {

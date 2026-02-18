@@ -138,10 +138,10 @@ TArray<FName> UElementDatabaseSubsystem::GetAllElementNames() const
 
     // Return default element names as fallback
     return TArray<FName>{
-        FName(TEXT("Flame")),
-        FName(TEXT("Ice")),
-        FName(TEXT("Lightning")),
-        FName(TEXT("Arcane"))
+        ElementNames::Flame,
+        ElementNames::Ice,
+        ElementNames::Lightning,
+        ElementNames::Arcane
     };
 }
 
@@ -154,10 +154,10 @@ bool UElementDatabaseSubsystem::HasElement(FName ElementName) const
 
     // Check against default elements
     FName Normalized = NormalizeElementName(ElementName);
-    return Normalized == FName(TEXT("Flame")) ||
-           Normalized == FName(TEXT("Ice")) ||
-           Normalized == FName(TEXT("Lightning")) ||
-           Normalized == FName(TEXT("Arcane"));
+    return Normalized == ElementNames::Flame ||
+           Normalized == ElementNames::Ice ||
+           Normalized == ElementNames::Lightning ||
+           Normalized == ElementNames::Arcane;
 }
 
 FName UElementDatabaseSubsystem::NormalizeElementName(FName ElementName) const
@@ -177,19 +177,19 @@ FName UElementDatabaseSubsystem::NormalizeElementName(FName ElementName) const
 
     if (ElementStr.Equals(TEXT("Lighting"), ESearchCase::IgnoreCase))
     {
-        return FName(TEXT("Lightning"));
+        return ElementNames::Lightning;
     }
     if (ElementStr.Equals(TEXT("Fire"), ESearchCase::IgnoreCase))
     {
-        return FName(TEXT("Flame"));
+        return ElementNames::Flame;
     }
     if (ElementStr.Equals(TEXT("Frost"), ESearchCase::IgnoreCase))
     {
-        return FName(TEXT("Ice"));
+        return ElementNames::Ice;
     }
     if (ElementStr.Equals(TEXT("Magic"), ESearchCase::IgnoreCase))
     {
-        return FName(TEXT("Arcane"));
+        return ElementNames::Arcane;
     }
 
     return ElementName;

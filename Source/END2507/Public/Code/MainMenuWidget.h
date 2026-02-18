@@ -10,12 +10,9 @@
 
 class UCodeGameInstance;
 class UButtonWidgetComponent;
-/**
- *  * Main menu screen displayed by MenuPlayerController.
- * Designer contains: Two ButtonWidgetComponent instances.
- * C++ handles: Binding button clicks, triggering level transitions.
- * 
- */
+// Main menu screen displayed by MenuPlayerController.
+// Designer contains: Two ButtonWidgetComponent instances.
+// C++ handles: Binding button clicks, triggering level transitions.
 UCLASS()
 class END2507_API UMainMenuWidget : public UUserWidget
 {

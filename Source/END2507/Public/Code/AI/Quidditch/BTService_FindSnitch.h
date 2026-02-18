@@ -38,23 +38,23 @@ public:
 
 protected:
     // Blackboard key for the Snitch actor reference
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector SnitchActorKey;
 
     // Blackboard key for the Snitch's current location
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector SnitchLocationKey;
 
     // Blackboard key for the Snitch's velocity (for prediction)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector SnitchVelocityKey;
 
     // Class filter for Snitch detection
-    UPROPERTY(EditAnywhere, Category = "Perception")
+    UPROPERTY(EditDefaultsOnly, Category = "Perception")
     TSubclassOf<AActor> SnitchClass;
 
     // Maximum perception range for Snitch
-    UPROPERTY(EditAnywhere, Category = "Perception")
+    UPROPERTY(EditDefaultsOnly, Category = "Perception")
     float MaxSnitchRange;
 
 private:

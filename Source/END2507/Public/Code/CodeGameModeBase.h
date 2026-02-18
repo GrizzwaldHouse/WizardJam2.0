@@ -21,6 +21,7 @@ public:
 	ACodeGameModeBase();
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	// [2026-01-20] Override to fix spawn collision issues
 	// Forces spawn even when collision is detected at PlayerStart

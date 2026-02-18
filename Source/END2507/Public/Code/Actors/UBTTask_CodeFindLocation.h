@@ -6,9 +6,6 @@
 #include "BehaviorTree/BTTaskNode.h"
 #include "UBTTask_CodeFindLocation.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class END2507_API UUBTTask_CodeFindLocation : public UBTTaskNode
 {
@@ -19,10 +16,10 @@ protected:
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 	// Search radius for finding random locations
 	UPROPERTY()
-	float SearchRadius = 1000.0f;
+	float SearchRadius;
 	// Blackboard key to store the found location
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Blackboard")
-	FName LocationKeyName = TEXT("Location");
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Blackboard")
+	FName LocationKeyName;
 	// Helper function to find a valid navigation point
 	FVector FindRandomNavigableLocation(const FVector& Origin, float Radius) const;
 

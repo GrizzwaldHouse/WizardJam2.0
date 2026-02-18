@@ -12,10 +12,7 @@ class UBlackboardComponent;
 class AAIController;
 class UEnvQuery;
 DECLARE_LOG_CATEGORY_EXTERN(LogFleeBehavior, Log, All);
-/**
- *  Task that makes the AI flee away from the player when health is low
- */
-
+// Task that makes the AI flee away from the player when health is low
 UCLASS()
 class END2507_API UBTTask_EnemyFlee : public UBTTaskNode
 {

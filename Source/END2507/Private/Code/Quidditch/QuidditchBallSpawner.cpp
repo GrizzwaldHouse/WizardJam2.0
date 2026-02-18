@@ -60,6 +60,26 @@ void AQuidditchBallSpawner::BeginPlay()
     }
 }
 
+void AQuidditchBallSpawner::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    // Unbind from match start emitter delegate
+    if (MatchStartEmitter)
+    {
+        MatchStartEmitter->OnSignalEmitted.RemoveDynamic(
+            this,
+            &AQuidditchBallSpawner::OnMatchStartSignalReceived
+        );
+    }
+
+    // Unbind from global signal delegate
+    if (bAutoCleanupOnMatchEnd)
+    {
+        AWorldSignalEmitter::OnAnySignalEmittedGlobal.RemoveAll(this);
+    }
+
+    Super::EndPlay(EndPlayReason);
+}
+
 void AQuidditchBallSpawner::FindMatchStartEmitter()
 {
     for (TActorIterator<AWorldSignalEmitter> It(GetWorld()); It; ++It)

@@ -22,6 +22,8 @@
 #include "BehaviorTree/BTDecorator.h"
 #include "BTDecorator_IsSeeker.generated.h"
 
+class AQuidditchGameMode;
+
 UCLASS(meta = (DisplayName = "Is Seeker Role"))
 class END2507_API UBTDecorator_IsSeeker : public UBTDecorator
 {
@@ -35,4 +37,8 @@ public:
 
     // Description shown in Behavior Tree editor
     virtual FString GetStaticDescription() const override;
+
+private:
+    // Cached game mode reference to avoid repeated casts
+    mutable TWeakObjectPtr<AQuidditchGameMode> CachedGameMode;
 };

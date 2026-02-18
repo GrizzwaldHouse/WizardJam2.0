@@ -128,19 +128,15 @@ void AAIC_QuidditchController::OnPossess(APawn* InPawn)
         SLOG_EVENT(this, "AI.Team", "FactionAssigned",
             Metadata.Add(TEXT("faction_id"), FString::FromInt(FactionID));
             Metadata.Add(TEXT("faction_color"), FactionColor.ToString());
-            Metadata.Add(TEXT("seeker_tag_added"), TEXT("true"));
         );
 
         UE_LOG(LogQuidditchAI, Display,
             TEXT("[%s] Faction initialized: Team ID = %d"),
             *GetName(), GetGenericTeamId().GetId());
 
-        // Add Seeker tag so Snitch perception detects this as a pursuer
-        // The SnitchBall::AIC_SnitchController checks for "Seeker", "Flying", or "Player" tags
-        InPawn->Tags.AddUnique(TEXT("Seeker"));
-
-        UE_LOG(LogQuidditchAI, Display, TEXT("[%s] Added 'Seeker' tag to %s"),
-            *GetName(), *InPawn->GetName());
+        // Role-specific tags are now applied in HandleQuidditchRoleAssigned()
+        // after GameMode assigns the actual role. Only Seekers get "Seeker" tag
+        // so the Snitch only evades actual Seekers, not all agents.
     }
     else
     {
@@ -232,6 +228,14 @@ void AAIC_QuidditchController::OnUnPossess()
     );
 
     UE_LOG(LogQuidditchAI, Display, TEXT("[%s] OnUnPossess"), *GetName());
+
+    // Unbind perception delegate to prevent stale reference crash
+    if (AIPerceptionComp)
+    {
+        AIPerceptionComp->OnTargetPerceptionUpdated.RemoveDynamic(
+            this, &AAIC_QuidditchController::HandlePerceptionUpdated);
+        UE_LOG(LogQuidditchAI, Log, TEXT("[%s] Unbound from perception delegate"), *GetName());
+    }
 
     // Unbind from BroomComponent delegate to prevent stale reference crash
     if (CurrentPawn)
@@ -800,6 +804,24 @@ void AAIC_QuidditchController::HandleQuidditchRoleAssigned(APawn* Agent, EQuiddi
             *QuidditchRoleKeyName.ToString(),
             *UEnum::GetValueAsString(AssignedRole),
             *UEnum::GetValueAsString(Team));
+    }
+
+    // Apply role-specific actor tags AFTER role is confirmed
+    // SnitchController checks for "Seeker", "Flying", or "Player" tags
+    // Only actual Seekers should trigger Snitch evasion behavior
+    if (APawn* ControlledPawn = GetPawn())
+    {
+        if (AssignedRole == EQuidditchRole::Seeker)
+        {
+            ControlledPawn->Tags.AddUnique(TEXT("Seeker"));
+            UE_LOG(LogQuidditchAI, Display, TEXT("[%s] Added 'Seeker' tag (role confirmed)"),
+                *GetName());
+        }
+        else
+        {
+            // Remove Seeker tag if role was reassigned from Seeker to something else
+            ControlledPawn->Tags.Remove(TEXT("Seeker"));
+        }
     }
 }
 

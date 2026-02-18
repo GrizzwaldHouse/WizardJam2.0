@@ -271,11 +271,20 @@ TArray<AActor*> UBTService_FindBludger::FindBludgersInWorld(UWorld* World) const
     return Bludgers;
 }
 
+AQuidditchGameMode* UBTService_FindBludger::GetGameMode(UWorld* World)
+{
+    if (!CachedGameMode.IsValid() && World)
+    {
+        CachedGameMode = Cast<AQuidditchGameMode>(World->GetAuthGameMode());
+    }
+    return CachedGameMode.Get();
+}
+
 AActor* UBTService_FindBludger::FindMostThreateningBludger(
     const TArray<AActor*>& Bludgers,
     APawn* OwnerPawn,
     UWorld* World,
-    APawn*& OutThreatenedTeammate) const
+    APawn*& OutThreatenedTeammate)
 {
     // MsPacMan INVERTED: Instead of finding safest path, find highest threat
     // Threat Score = 1 / Distance(Bludger, Teammate)
@@ -288,7 +297,7 @@ AActor* UBTService_FindBludger::FindMostThreateningBludger(
         return nullptr;
     }
 
-    AQuidditchGameMode* GameMode = Cast<AQuidditchGameMode>(World->GetAuthGameMode());
+    AQuidditchGameMode* GameMode = GetGameMode(World);
     if (!GameMode)
     {
         return nullptr;
@@ -348,14 +357,14 @@ AActor* UBTService_FindBludger::FindMostThreateningBludger(
     return MostThreateningBludger;
 }
 
-APawn* UBTService_FindBludger::FindBestEnemyTarget(APawn* OwnerPawn, UWorld* World) const
+APawn* UBTService_FindBludger::FindBestEnemyTarget(APawn* OwnerPawn, UWorld* World)
 {
     if (!OwnerPawn || !World)
     {
         return nullptr;
     }
 
-    AQuidditchGameMode* GameMode = Cast<AQuidditchGameMode>(World->GetAuthGameMode());
+    AQuidditchGameMode* GameMode = GetGameMode(World);
     if (!GameMode)
     {
         return nullptr;

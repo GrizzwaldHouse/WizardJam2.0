@@ -49,11 +49,11 @@ protected:
     // ========================================================================
 
     // Bludger to hit (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector BludgerKey;
 
     // Target enemy to hit Bludger at (Object)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector TargetEnemyKey;
 
     // ========================================================================
@@ -61,19 +61,19 @@ protected:
     // ========================================================================
 
     // Maximum distance to attempt hitting Bludger
-    UPROPERTY(EditAnywhere, Category = "Hit")
+    UPROPERTY(EditDefaultsOnly, Category = "Hit")
     float MaxHitRange;
 
     // Speed imparted to Bludger on hit
-    UPROPERTY(EditAnywhere, Category = "Hit")
+    UPROPERTY(EditDefaultsOnly, Category = "Hit")
     float HitForce;
 
     // Lead factor for target prediction (1.0 = perfect lead)
-    UPROPERTY(EditAnywhere, Category = "Hit")
+    UPROPERTY(EditDefaultsOnly, Category = "Hit")
     float LeadFactor;
 
     // Cooldown before Beater can hit again
-    UPROPERTY(EditAnywhere, Category = "Hit")
+    UPROPERTY(EditDefaultsOnly, Category = "Hit")
     float HitCooldown;
 
 private:

@@ -336,6 +336,18 @@ void ABaseAgent::BeginPlay()
 		*GetName(), *EquippedRifle->GetName());
 	
 }
+void ABaseAgent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    // Unbind rifle delegates to prevent stale reference crash
+    if (EquippedRifle)
+    {
+        EquippedRifle->OnRifleAttack.RemoveDynamic(this, &ABaseAgent::HandleActionFinished);
+        EquippedRifle->OnAmmoChanged.RemoveDynamic(this, &ABaseAgent::HandleAmmoChanged);
+    }
+
+    Super::EndPlay(EndPlayReason);
+}
+
 void ABaseAgent::HandleHurt(float HealthRatio)
 {
 	// Call parent implementation for hit animation

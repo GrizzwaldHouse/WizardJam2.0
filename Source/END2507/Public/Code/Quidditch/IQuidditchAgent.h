@@ -36,10 +36,8 @@ class UIQuidditchAgent : public UInterface
     GENERATED_BODY()
 };
 
-/**
- * Interface for Quidditch participants (Players and AI)
- * Implement this on any Character/Pawn that plays Quidditch
- */
+// Interface for Quidditch participants (Players and AI)
+// Implement this on any Character/Pawn that plays Quidditch
 class END2507_API IIQuidditchAgent
 {
     GENERATED_BODY()
@@ -49,24 +47,18 @@ public:
     // ROLE QUERIES - What is this agent?
     // ========================================================================
 
-    /**
-     * Returns the agent's assigned Quidditch role
-     * Used by behavior trees and team manager for role-specific logic
-     */
+    // Returns the agent's assigned Quidditch role
+    // Used by behavior trees and team manager for role-specific logic
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Role")
     EQuidditchRole GetQuidditchRole() const;
 
-    /**
-     * Sets the agent's Quidditch role
-     * Called by TeamAIManager during match setup
-     */
+    // Sets the agent's Quidditch role
+    // Called by TeamAIManager during match setup
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Role")
     void SetQuidditchRole(EQuidditchRole NewRole);
 
-    /**
-     * Returns the agent's team ID (0 or 1 in standard match)
-     * Uses IGenericTeamAgentInterface under the hood
-     */
+    // Returns the agent's team ID (0 or 1 in standard match)
+    // Uses IGenericTeamAgentInterface under the hood
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Team")
     int32 GetQuidditchTeamID() const;
 
@@ -74,33 +66,23 @@ public:
     // STATE QUERIES - What is this agent doing?
     // ========================================================================
 
-    /**
-     * Is the agent currently mounted on a broom and flying?
-     */
+    // Is the agent currently mounted on a broom and flying?
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|State")
     bool IsOnBroom() const;
 
-    /**
-     * Is the agent currently holding a ball?
-     */
+    // Is the agent currently holding a ball?
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Ball")
     bool HasBall() const;
 
-    /**
-     * What type of ball is the agent holding (None if not holding)
-     */
+    // What type of ball is the agent holding (None if not holding)
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Ball")
     EQuidditchBall GetHeldBallType() const;
 
-    /**
-     * Get the agent's current location (for team coordination)
-     */
+    // Get the agent's current location (for team coordination)
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|State")
     FVector GetAgentLocation() const;
 
-    /**
-     * Get the agent's current velocity (for intercept calculations)
-     */
+    // Get the agent's current velocity (for intercept calculations)
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|State")
     FVector GetAgentVelocity() const;
 
@@ -108,41 +90,24 @@ public:
     // ACTIONS - What can this agent do?
     // ========================================================================
 
-    /**
-     * Called by AI or input to mount a broom
-     * @param BroomActor - The broom to mount (can be nullptr for default)
-     * @return True if mount succeeded
-     */
+    // Called by AI or input to mount a broom
+    // BroomActor can be nullptr for default
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Actions")
     bool TryMountBroom(AActor* BroomActor);
 
-    /**
-     * Called by AI or input to dismount from broom
-     */
+    // Called by AI or input to dismount from broom
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Actions")
     void DismountBroom();
 
-    /**
-     * Called by AI or input to pick up a nearby ball
-     * @param Ball - The ball to pick up
-     * @return True if pickup succeeded
-     */
+    // Called by AI or input to pick up a nearby ball
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Actions")
     bool TryPickUpBall(AActor* Ball);
 
-    /**
-     * Called by AI or input to throw/release held ball toward target
-     * @param TargetLocation - World location to throw toward
-     * @return True if throw succeeded
-     */
+    // Called by AI or input to throw/release held ball toward target
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Actions")
     bool ThrowBallAtTarget(FVector TargetLocation);
 
-    /**
-     * Called by AI or input to pass ball to teammate
-     * @param Teammate - The teammate to pass to
-     * @return True if pass succeeded
-     */
+    // Called by AI or input to pass ball to teammate
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Actions")
     bool PassBallToTeammate(AActor* Teammate);
 
@@ -151,19 +116,13 @@ public:
     // Used by UFlyingSteeringComponent for team coordination
     // ========================================================================
 
-    /**
-     * Get agents that should be considered flock members for steering
-     * Typically returns teammates within a certain radius
-     * @param OutFlockMembers - Array to fill with flock member actors
-     * @param SearchRadius - How far to search for flock members
-     */
+    // Get agents that should be considered flock members for steering
+    // Typically returns teammates within a certain radius
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Flocking")
     void GetFlockMembers(TArray<AActor*>& OutFlockMembers, float SearchRadius);
 
-    /**
-     * Get the tag used for flock identification
-     * Agents with matching tags are considered part of the same flock
-     */
+    // Get the tag used for flock identification
+    // Agents with matching tags are considered part of the same flock
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Quidditch|Flocking")
     FName GetFlockTag() const;
 };

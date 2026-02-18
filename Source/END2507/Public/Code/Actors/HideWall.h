@@ -7,6 +7,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "HideWall.generated.h"
+class UStaticMesh;
 class UStaticMeshComponent;
 class UBoxComponent;
 class ABaseAgent;
@@ -68,7 +69,11 @@ protected:
 
 	void OnSwitchHit(float DamageFromProjectile);
 	void ResetSwitchCooldown();
-private: 
+private:
+	// Static mesh asset for the wall (set in Blueprint, replaces ConstructorHelpers)
+	UPROPERTY(EditDefaultsOnly, Category = "Mesh", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UStaticMesh> WallMeshAsset;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* WallMesh;
 
@@ -85,10 +90,10 @@ private:
 	bool bShowTriggerVisuals; // Debug visuals toggle for the switch
 
 	UPROPERTY()
-	float SwitchCooldown = 5.0f;
+	float SwitchCooldown;
 
 	UPROPERTY()
-	bool bSwitchOnCooldown = false;
+	bool bSwitchOnCooldown;
 
 	UPROPERTY()
 	FTimerHandle SwitchCooldownTimer;
@@ -97,20 +102,20 @@ private:
 
 
 	// Designer-configurable properties
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wall Settings", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Wall Settings", meta = (AllowPrivateAccess = "true"))
 	FVector WallScale;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wall Settings", meta = (AllowPrivateAccess = "true", DisplayName = "Wall Colors"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Wall Settings", meta = (AllowPrivateAccess = "true", DisplayName = "Wall Colors"))
 	TArray<FLinearColor> WallColors;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wall Settings", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Wall Settings", meta = (AllowPrivateAccess = "true"))
 	bool bProvideCover;
 
 	// === HIT FLASH PROPERTIES ===
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction", meta = (AllowPrivateAccess = "true"))
-	TArray<FLinearColor> HitFlashColors; 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Hit Reaction", meta = (AllowPrivateAccess = "true"))
+	TArray<FLinearColor> HitFlashColors;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hit Reaction", meta = (AllowPrivateAccess = "true", ClampMin = "0.1", ClampMax = "2.0"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Hit Reaction", meta = (AllowPrivateAccess = "true", ClampMin = "0.1", ClampMax = "2.0"))
 	float FlashDuration;
 
 	UPROPERTY()
@@ -118,23 +123,23 @@ private:
 
 	// === SPINNING PROPERTIES ===
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool bIsSpinning;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", EditCondition = "bIsSpinning"))
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", EditCondition = "bIsSpinning"))
 	ESpinAxis SpinAxis;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", EditCondition = "bIsSpinning", ClampMin = "0.0", ClampMax = "360.0"))
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", EditCondition = "bIsSpinning", ClampMin = "0.0", ClampMax = "360.0"))
 	float SpinSpeed;
 
 	// === HEALTH & DAMAGE PROPERTIES ===
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = "true"))
 	float MaxHealth;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
 	float CurrentHealth;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	float PlayerDamage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Agent Spawning", meta = (AllowPrivateAccess = "true"))

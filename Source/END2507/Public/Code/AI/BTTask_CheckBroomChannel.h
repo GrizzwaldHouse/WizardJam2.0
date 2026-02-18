@@ -43,10 +43,10 @@ public:
 
 protected:
     // The channel name to check for (default: "Broom")
-    UPROPERTY(EditAnywhere, Category = "Channel")
+    UPROPERTY(EditDefaultsOnly, Category = "Channel")
     FName ChannelToCheck;
 
     // Blackboard key to set when channel is found (Bool type)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector HasBroomKey;
 };

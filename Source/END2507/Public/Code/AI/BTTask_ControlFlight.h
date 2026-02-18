@@ -73,7 +73,7 @@ protected:
     // Blackboard key for target location (Vector) or target actor (Object)
     // If Object: Uses actor's location as target
     // If Vector: Uses vector directly
-    UPROPERTY(EditAnywhere, Category = "Flight|Target")
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Target")
     FBlackboardKeySelector TargetKey;
 
     // ========================================================================
@@ -81,12 +81,12 @@ protected:
     // ========================================================================
 
     // How close to target before considering "arrived" (in units)
-    UPROPERTY(EditAnywhere, Category = "Flight|Parameters", 
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Parameters", 
         meta = (ClampMin = "10.0", ClampMax = "1000.0"))
     float ArrivalTolerance;
 
     // How close in altitude before stopping vertical movement
-    UPROPERTY(EditAnywhere, Category = "Flight|Parameters",
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Parameters",
         meta = (ClampMin = "10.0", ClampMax = "500.0"))
     float AltitudeTolerance;
 
@@ -95,11 +95,11 @@ protected:
     // ========================================================================
 
     // If true, enable boost when far from target
-    UPROPERTY(EditAnywhere, Category = "Flight|Boost")
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Boost")
     bool bUseBoostWhenFar;
 
     // Distance threshold to enable boost (if bUseBoostWhenFar is true)
-    UPROPERTY(EditAnywhere, Category = "Flight|Boost",
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Boost",
         meta = (EditCondition = "bUseBoostWhenFar", ClampMin = "100.0"))
     float BoostDistanceThreshold;
 
@@ -108,13 +108,13 @@ protected:
     // ========================================================================
 
     // Multiplier for vertical input (1.0 = full speed, 0.5 = half speed)
-    UPROPERTY(EditAnywhere, Category = "Flight|Movement",
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Movement",
         meta = (ClampMin = "0.1", ClampMax = "1.0"))
     float VerticalInputMultiplier;
 
     // If true, move directly toward target (3D movement)
     // If false, only adjust altitude, let navigation handle horizontal
-    UPROPERTY(EditAnywhere, Category = "Flight|Movement")
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Movement")
     bool bDirectFlight;
 
     // ========================================================================
@@ -123,27 +123,27 @@ protected:
 
     // Stamina percentage below which boost is disabled (0.0-1.0, default 0.4 = 40%)
     // This prevents AI from draining stamina too quickly during flight
-    UPROPERTY(EditAnywhere, Category = "Flight|Stamina",
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Stamina",
         meta = (ClampMin = "0.0", ClampMax = "1.0"))
     float BoostStaminaThreshold;
 
     // Stamina percentage below which movement speed is reduced (0.0-1.0, default 0.25 = 25%)
-    UPROPERTY(EditAnywhere, Category = "Flight|Stamina",
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Stamina",
         meta = (ClampMin = "0.0", ClampMax = "1.0"))
     float ThrottleStaminaThreshold;
 
     // Movement speed multiplier when stamina is below throttle threshold (0.1-1.0)
-    UPROPERTY(EditAnywhere, Category = "Flight|Stamina",
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Stamina",
         meta = (ClampMin = "0.1", ClampMax = "1.0"))
     float LowStaminaMovementScale;
 
     // If true, AI will abort flight and land when stamina reaches critical level
-    UPROPERTY(EditAnywhere, Category = "Flight|Stamina")
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Stamina")
     bool bLandWhenStaminaCritical;
 
     // Stamina percentage at which AI aborts flight (0.0-0.5, default 0.15 = 15%)
     // Only used when bLandWhenStaminaCritical is true
-    UPROPERTY(EditAnywhere, Category = "Flight|Stamina",
+    UPROPERTY(EditDefaultsOnly, Category = "Flight|Stamina",
         meta = (EditCondition = "bLandWhenStaminaCritical", ClampMin = "0.0", ClampMax = "0.5"))
     float CriticalStaminaThreshold;
 

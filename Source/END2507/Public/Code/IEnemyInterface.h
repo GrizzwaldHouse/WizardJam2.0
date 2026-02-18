@@ -15,9 +15,6 @@ class UEnemyInterface : public UInterface
 	GENERATED_BODY()
 };
 
-/**
- * 
- */
 class END2507_API IEnemyInterface
 {
 	GENERATED_BODY()

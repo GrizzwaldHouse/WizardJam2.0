@@ -24,6 +24,7 @@ class END2507_API UCharacterAnimation : public UAnimInstance
 	
 public:
 	virtual void NativeInitializeAnimation() override;
+	virtual void NativeUninitializeAnimation() override;
 	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 
 	UFUNCTION(BlueprintNativeEvent)
@@ -60,28 +61,28 @@ protected:
 	float Velocity;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Movement Direction")
-	float MovementDirection = 0.0f;
+	float MovementDirection;
 
 	// Spine aiming
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Spine Animation")
-	FRotator SpineRotation = FRotator::ZeroRotator;
+	FRotator SpineRotation;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spine Animation")
-	FName SpineBoneName = TEXT("spine_02");
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Spine Animation")
+	FName SpineBoneName;
 
 	// Combat state
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-	bool bIsFiring = false;
+	bool bIsFiring;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat")
-	float FireCooldownTime = 0.8f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combat")
+	float FireCooldownTime;
 
 	FTimerHandle FireCooldownTimer;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation State")
-	bool bIsHit = false;
+	bool bIsHit;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation State")
-	bool bIsDead = false;
+	bool bIsDead;
 	UPROPERTY(BlueprintReadOnly, Category = "Animation State")
 	bool bIsReloading;
 	UFUNCTION()
@@ -92,12 +93,12 @@ protected:
 	class ABaseCharacter* OwningCharacter;
 
 	// Animation assets
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	FName ActionSlotName = TEXT("ActionSlotName");
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation")
+	FName ActionSlotName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation")
 	class UAnimSequenceBase* FireAsset;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation")
 	class UAnimSequence* ReloadAsset;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
 	UAnimSequence* HitAsset;
@@ -115,8 +116,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimSequence* CurrentReloadAsset;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	bool bDebug = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Animation")
+	bool bDebug;
 
 
 private:

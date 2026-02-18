@@ -27,7 +27,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Default)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Default)
 	TSubclassOf<AActor> SpawnBlueprintClass;
 
 private:

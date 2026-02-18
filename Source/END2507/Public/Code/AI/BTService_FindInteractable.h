@@ -65,19 +65,19 @@ public:
 protected:
     // Filter to only find actors of this class (null = any IInteractable actor)
     // Set to ABroomActor::StaticClass() to only find brooms
-    UPROPERTY(EditAnywhere, Category = "Interactable")
+    UPROPERTY(EditDefaultsOnly, Category = "Interactable")
     TSubclassOf<AActor> InteractableClass;
 
     // Blackboard key to store the found interactable (Object type)
-    UPROPERTY(EditAnywhere, Category = "Blackboard")
+    UPROPERTY(EditDefaultsOnly, Category = "Blackboard")
     FBlackboardKeySelector OutputKey;
 
     // Maximum distance to search (0 = unlimited)
-    UPROPERTY(EditAnywhere, Category = "Interactable", meta = (ClampMin = "0.0"))
+    UPROPERTY(EditDefaultsOnly, Category = "Interactable", meta = (ClampMin = "0.0"))
     float MaxSearchDistance;
 
     // If true, only return interactables where CanInteract() returns true
     // Useful for filtering out brooms that are already being ridden
-    UPROPERTY(EditAnywhere, Category = "Interactable")
+    UPROPERTY(EditDefaultsOnly, Category = "Interactable")
     bool bRequireCanInteract;
 };

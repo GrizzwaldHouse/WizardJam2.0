@@ -6,10 +6,8 @@
 #include "Code/Actors/BasePickup.h"
 #include "AmmoPickup.generated.h"
 
-/**
- *  * Max Ammo Pickup - Increases player's maximum ammo capacity
- * Only collectible by player; disappears on pickup
- */
+// Max Ammo Pickup - Increases player's maximum ammo capacity
+// Only collectible by player; disappears on pickup
 UCLASS()
 class END2507_API AAmmoPickup : public ABasePickup
 {

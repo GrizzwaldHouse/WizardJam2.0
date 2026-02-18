@@ -72,6 +72,8 @@ protected:
 	virtual void HandleHurt(float DamageRatio);
 	// Called when character dies 
 	virtual void HandleDeathStart(float DamageRatio);
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 private:
 	UFUNCTION()
 	void OnHealthChanged(float HealthRatio);
