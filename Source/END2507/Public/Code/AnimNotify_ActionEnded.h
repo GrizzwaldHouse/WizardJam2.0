@@ -7,9 +7,6 @@
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "AnimNotify_ActionEnded.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class END2507_API UAnimNotify_ActionEnded : public UAnimNotify
 {

@@ -13,9 +13,6 @@
 #include "GenericTeamAgentInterface.h"
 #include "BasePlayer.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class END2507_API ABasePlayer : public ABaseCharacter, public IGenericTeamAgentInterface, public ICodeFactionInterface
 {

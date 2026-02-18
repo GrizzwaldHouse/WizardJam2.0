@@ -23,6 +23,7 @@ class END2507_API UCharacterAnimation : public UAnimInstance
 	GENERATED_BODY()
 	
 public:
+	UCharacterAnimation();
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUninitializeAnimation() override;
 	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;

@@ -12,9 +12,6 @@ class UCodeFactionInterface : public UInterface
 	GENERATED_BODY()
 };
 
-/**
- * 
- */
 class END2507_API ICodeFactionInterface
 {
 	GENERATED_BODY()

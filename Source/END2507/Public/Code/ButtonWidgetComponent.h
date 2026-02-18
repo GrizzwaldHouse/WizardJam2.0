@@ -10,12 +10,9 @@ class UTextBlock;
 // Delegate signature for button click events
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnButtonClicked);
 
-/**
- *  * Reusable button component used across multiple UI screens.
- * Designer contains: Background Button + Information Text Block.
- * C++ handles: Click events, text updates, delegate broadcasting.
- * 
- */
+// Reusable button component used across multiple UI screens.
+// Designer contains: Background Button + Information Text Block.
+// C++ handles: Click events, text updates, delegate broadcasting.
 UCLASS()
 class END2507_API UButtonWidgetComponent : public UUserWidget
 {
