@@ -1,0 +1,29 @@
+{
+    "FileVersion": 3,
+    "Version": 1,
+    "VersionName": "1.0.0",
+    "FriendlyName": "Steam Deck Input",
+    "Description": "Steam Deck control mapping and input processing for UE5 games. Provides auto-detection, gyro aiming, trackpad modes, and layered Input Mapping Contexts.",
+    "Category": "Input",
+    "CreatedBy": "Marcus Daley",
+    "CreatedByURL": "https://github.com/GrizzwaldHouse",
+    "DocsURL": "",
+    "MarketplaceURL": "",
+    "CanContainContent": true,
+    "IsBetaVersion": true,
+    "IsExperimentalVersion": false,
+    "Installed": false,
+    "Modules": [
+        {
+            "Name": "SteamDeckInput",
+            "Type": "Runtime",
+            "LoadingPhase": "Default"
+        }
+    ],
+    "Plugins": [
+        {
+            "Name": "EnhancedInput",
+            "Enabled": true
+        }
+    ]
+}
