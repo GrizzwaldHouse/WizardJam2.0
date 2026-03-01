@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0.0",
+	"FriendlyName": "BrightForge Connect",
+	"Description": "Connect to BrightForge for AI-powered 3D asset generation and import",
+	"Category": "Editor",
+	"CreatedBy": "Marcus Daley",
+	"CreatedByURL": "https://github.com/GrizzwaldHouse",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "BrightForgeConnect",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit",
+			"PlatformAllowList": ["Win64"]
+		}
+	]
+}

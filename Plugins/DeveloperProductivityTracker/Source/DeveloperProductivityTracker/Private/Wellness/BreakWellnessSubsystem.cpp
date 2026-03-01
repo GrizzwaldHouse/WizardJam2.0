@@ -23,6 +23,9 @@ UBreakWellnessSubsystem::UBreakWellnessSubsystem()
 	, SmartBreakDetector(nullptr)
 	, BreakQualityEvaluator(nullptr)
 	, StretchReminderScheduler(nullptr)
+	, HabitStreakTracker(nullptr)
+	, HttpServer(nullptr)
+	, ExercisePopupManager(nullptr)
 	, MinutesBeforeBreakSuggestion(45.0f)
 	, MinutesBeforeOverworkedWarning(90.0f)
 	, TodayWorkSeconds(0.0f)
@@ -53,6 +56,48 @@ void UBreakWellnessSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 void UBreakWellnessSubsystem::Deinitialize()
 {
 	UE_LOG(LogWellness, Log, TEXT("BreakWellnessSubsystem deinitializing..."));
+
+	// Unbind all delegates before stopping components
+	if (PomodoroManager)
+	{
+		PomodoroManager->OnPomodoroStateChanged.RemoveDynamic(this, &UBreakWellnessSubsystem::HandlePomodoroStateChanged);
+		PomodoroManager->OnPomodoroIntervalCompleted.RemoveDynamic(this, &UBreakWellnessSubsystem::HandlePomodoroIntervalCompleted);
+	}
+
+	if (SmartBreakDetector)
+	{
+		SmartBreakDetector->OnBreakDetected.RemoveDynamic(this, &UBreakWellnessSubsystem::HandleBreakDetected);
+		SmartBreakDetector->OnBreakEnded.RemoveDynamic(this, &UBreakWellnessSubsystem::HandleBreakEnded);
+	}
+
+	if (StretchReminderScheduler)
+	{
+		StretchReminderScheduler->OnStretchReminderCompleted.RemoveDynamic(this, &UBreakWellnessSubsystem::HandleStretchCompleted);
+		StretchReminderScheduler->OnStretchReminderTriggered.RemoveDynamic(this, &UBreakWellnessSubsystem::HandleStretchReminderTriggered);
+	}
+
+	if (ExercisePopupManager)
+	{
+		ExercisePopupManager->OnExercisePopupAction.RemoveDynamic(this, &UBreakWellnessSubsystem::HandleExercisePopupAction);
+	}
+
+	// Stop HTTP server
+	if (HttpServer)
+	{
+		HttpServer->StopServer();
+	}
+
+	// Dismiss exercise popup
+	if (ExercisePopupManager)
+	{
+		ExercisePopupManager->DismissPopup();
+	}
+
+	// Save habit data before shutdown
+	if (HabitStreakTracker)
+	{
+		HabitStreakTracker->SaveToJson();
+	}
 
 	// Stop all schedulers
 	if (StretchReminderScheduler)
@@ -297,6 +342,7 @@ void UBreakWellnessSubsystem::InitializeComponents()
 		StretchReminderScheduler->ReminderIntervalMinutes = Settings->StretchReminderIntervalMinutes;
 	}
 	StretchReminderScheduler->OnStretchReminderCompleted.AddDynamic(this, &UBreakWellnessSubsystem::HandleStretchCompleted);
+	StretchReminderScheduler->OnStretchReminderTriggered.AddDynamic(this, &UBreakWellnessSubsystem::HandleStretchReminderTriggered);
 
 	// Auto-start stretch reminders if enabled
 	if (Settings && Settings->bEnableStretchReminders)
@@ -304,7 +350,32 @@ void UBreakWellnessSubsystem::InitializeComponents()
 		StretchReminderScheduler->StartScheduler();
 	}
 
-	UE_LOG(LogWellness, Log, TEXT("Wellness components initialized"));
+	// Create habit streak tracker
+	HabitStreakTracker = NewObject<UHabitStreakTracker>(this);
+	if (Settings && Settings->bEnableHabitStreaks)
+	{
+		HabitStreakTracker->DailyStretchGoal = Settings->DailyStretchGoal;
+		HabitStreakTracker->DailyBreakGoal = Settings->DailyBreakGoal;
+		HabitStreakTracker->DailyPomodoroGoal = Settings->DailyPomodoroGoal;
+		HabitStreakTracker->LoadFromJson();
+	}
+
+	// Bind Pomodoro completion to habit tracker
+	PomodoroManager->OnPomodoroIntervalCompleted.AddDynamic(this, &UBreakWellnessSubsystem::HandlePomodoroIntervalCompleted);
+
+	// Create exercise popup manager
+	ExercisePopupManager = NewObject<UExercisePopupManager>(this);
+	ExercisePopupManager->OnExercisePopupAction.AddDynamic(this, &UBreakWellnessSubsystem::HandleExercisePopupAction);
+
+	// Create HTTP API server
+	HttpServer = NewObject<UWellnessHttpServer>(this);
+	if (Settings && Settings->bEnableHttpApi)
+	{
+		HttpServer->ServerPort = Settings->HttpApiPort;
+		HttpServer->StartServer(this);
+	}
+
+	UE_LOG(LogWellness, Log, TEXT("Wellness components initialized (8 total)"));
 }
 
 void UBreakWellnessSubsystem::UpdateWellnessStatus()
@@ -352,10 +423,12 @@ EWellnessStatus UBreakWellnessSubsystem::CalculateWellnessStatus() const
 	}
 
 	// Check for optimal (had a quality break recently)
-	if (MinutesSinceBreak < 15.0f && TodayBreakQualities.Num() > 0)
+	static constexpr float OptimalRecentBreakMinutes = 15.0f;
+	static constexpr float OptimalBreakQualityThreshold = 60.0f;
+	if (MinutesSinceBreak < OptimalRecentBreakMinutes && TodayBreakQualities.Num() > 0)
 	{
 		float LastQuality = TodayBreakQualities.Last();
-		if (LastQuality >= 60.0f)
+		if (LastQuality >= OptimalBreakQualityThreshold)
 		{
 			return EWellnessStatus::Optimal;
 		}
@@ -402,6 +475,12 @@ void UBreakWellnessSubsystem::HandleBreakEnded(const FDetectedBreak& BreakData)
 			*Report.Feedback);
 	}
 
+	// Record break in habit tracker
+	if (HabitStreakTracker)
+	{
+		HabitStreakTracker->RecordBreakTaken();
+	}
+
 	// Reset break timer
 	SecondsSinceLastBreak = 0.0f;
 	LastBreakEndTime = FDateTime::Now();
@@ -410,4 +489,51 @@ void UBreakWellnessSubsystem::HandleBreakEnded(const FDetectedBreak& BreakData)
 void UBreakWellnessSubsystem::HandleStretchCompleted()
 {
 	UE_LOG(LogWellness, Log, TEXT("Stretch exercise completed"));
+
+	// Record in habit tracker
+	if (HabitStreakTracker)
+	{
+		HabitStreakTracker->RecordStretchCompleted();
+	}
+}
+
+void UBreakWellnessSubsystem::HandleStretchReminderTriggered(const FStretchExercise& Exercise)
+{
+	// Show popup if enabled, otherwise just log
+	const UProductivityTrackerSettings* Settings = UProductivityTrackerSettings::Get();
+	if (ExercisePopupManager && Settings && Settings->bShowExercisePopup)
+	{
+		ExercisePopupManager->ShowPopup(Exercise);
+	}
+}
+
+void UBreakWellnessSubsystem::HandleExercisePopupAction(FName Action)
+{
+	// Route popup actions back to the stretch scheduler
+	if (!StretchReminderScheduler)
+	{
+		return;
+	}
+
+	if (Action == FName(TEXT("Complete")))
+	{
+		StretchReminderScheduler->CompleteStretch();
+	}
+	else if (Action == FName(TEXT("Snooze")))
+	{
+		StretchReminderScheduler->SnoozeReminder();
+	}
+	else if (Action == FName(TEXT("Skip")))
+	{
+		StretchReminderScheduler->SkipReminder();
+	}
+}
+
+void UBreakWellnessSubsystem::HandlePomodoroIntervalCompleted(EPomodoroState CompletedState)
+{
+	// Only record completed work intervals as Pomodoro habit progress
+	if (CompletedState == EPomodoroState::Working && HabitStreakTracker)
+	{
+		HabitStreakTracker->RecordPomodoroCompleted();
+	}
 }

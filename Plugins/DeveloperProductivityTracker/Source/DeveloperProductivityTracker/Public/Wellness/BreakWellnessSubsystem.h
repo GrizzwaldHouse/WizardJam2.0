@@ -22,6 +22,9 @@
 #include "SmartBreakDetector.h"
 #include "BreakQualityEvaluator.h"
 #include "StretchReminderScheduler.h"
+#include "HabitStreakTracker.h"
+#include "WellnessHttpServer.h"
+#include "ExercisePopupWidget.h"
 #include "BreakWellnessSubsystem.generated.h"
 
 // Log category
@@ -123,6 +126,18 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Productivity|Wellness")
 	UStretchReminderScheduler* GetStretchReminderScheduler() const { return StretchReminderScheduler; }
 
+	// Get the habit streak tracker
+	UFUNCTION(BlueprintPure, Category = "Productivity|Wellness")
+	UHabitStreakTracker* GetHabitStreakTracker() const { return HabitStreakTracker; }
+
+	// Get the HTTP API server
+	UFUNCTION(BlueprintPure, Category = "Productivity|Wellness")
+	UWellnessHttpServer* GetHttpServer() const { return HttpServer; }
+
+	// Get the exercise popup manager
+	UFUNCTION(BlueprintPure, Category = "Productivity|Wellness")
+	UExercisePopupManager* GetExercisePopupManager() const { return ExercisePopupManager; }
+
 	// ========================================================================
 	// WELLNESS STATUS
 	// ========================================================================
@@ -209,6 +224,15 @@ private:
 	UPROPERTY()
 	UStretchReminderScheduler* StretchReminderScheduler;
 
+	UPROPERTY()
+	UHabitStreakTracker* HabitStreakTracker;
+
+	UPROPERTY()
+	UWellnessHttpServer* HttpServer;
+
+	UPROPERTY()
+	UExercisePopupManager* ExercisePopupManager;
+
 	// Today's statistics
 	float TodayWorkSeconds;
 	float TodayBreakSeconds;
@@ -231,4 +255,16 @@ private:
 
 	UFUNCTION()
 	void HandleStretchCompleted();
+
+	// Forwarding handler - passes reminder to exercise popup
+	UFUNCTION()
+	void HandleStretchReminderTriggered(const FStretchExercise& Exercise);
+
+	// Popup action routes Complete/Snooze/Skip back to the scheduler
+	UFUNCTION()
+	void HandleExercisePopupAction(FName Action);
+
+	// Routes Pomodoro completions into habit tracker
+	UFUNCTION()
+	void HandlePomodoroIntervalCompleted(EPomodoroState CompletedState);
 };

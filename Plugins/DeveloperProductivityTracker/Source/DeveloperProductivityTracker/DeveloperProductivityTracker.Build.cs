@@ -86,7 +86,8 @@ public class DeveloperProductivityTracker : ModuleRules
 				"DesktopPlatform",
 				"ApplicationCore",
 				"Blutility",
-				"UMGEditor"
+				"UMGEditor",
+				"HTTPServer"
 			}
 		);
 

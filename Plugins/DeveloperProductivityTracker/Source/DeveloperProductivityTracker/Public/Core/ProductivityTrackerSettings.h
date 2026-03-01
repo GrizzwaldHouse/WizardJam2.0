@@ -136,6 +136,49 @@ public:
 		meta = (ClampMin = "15.0", ClampMax = "120.0", Units = "Minutes", EditCondition = "bEnableStretchReminders"))
 	float StretchReminderIntervalMinutes;
 
+	// Show popup window for stretch exercises (vs notification only)
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Wellness|Stretching",
+		meta = (EditCondition = "bEnableStretchReminders"))
+	bool bShowExercisePopup;
+
+	// ========================================================================
+	// HABIT STREAK SETTINGS
+	// ========================================================================
+
+	// Enable habit streak tracking
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Wellness|Habits",
+		meta = (EditCondition = "bEnableWellnessFeatures"))
+	bool bEnableHabitStreaks;
+
+	// Daily stretch goal for streaks
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Wellness|Habits",
+		meta = (ClampMin = "1", ClampMax = "20", EditCondition = "bEnableHabitStreaks"))
+	int32 DailyStretchGoal;
+
+	// Daily break goal for streaks
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Wellness|Habits",
+		meta = (ClampMin = "1", ClampMax = "20", EditCondition = "bEnableHabitStreaks"))
+	int32 DailyBreakGoal;
+
+	// Daily Pomodoro goal for streaks
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Wellness|Habits",
+		meta = (ClampMin = "1", ClampMax = "16", EditCondition = "bEnableHabitStreaks"))
+	int32 DailyPomodoroGoal;
+
+	// ========================================================================
+	// HTTP API SETTINGS
+	// ========================================================================
+
+	// Enable HTTP API for external tool integration
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Wellness|API",
+		meta = (EditCondition = "bEnableWellnessFeatures"))
+	bool bEnableHttpApi;
+
+	// Port for the HTTP API server
+	UPROPERTY(Config, EditDefaultsOnly, Category = "Wellness|API",
+		meta = (ClampMin = "1024", ClampMax = "65535", EditCondition = "bEnableHttpApi"))
+	int32 HttpApiPort;
+
 	// ========================================================================
 	// VISUALIZATION SETTINGS
 	// ========================================================================

@@ -16,6 +16,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UObject/SoftObjectPath.h"
 #include "StretchReminderScheduler.generated.h"
 
 // Log category
@@ -42,18 +43,40 @@ struct DEVELOPERPRODUCTIVITYTRACKER_API FStretchExercise
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Exercise")
 	int32 Repetitions;
 
+	// Optional reference to a demonstration image texture
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Exercise")
+	FSoftObjectPath DemonstrationImage;
+
+	// Optional video/media URL for the exercise
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Exercise")
+	FString VideoURL;
+
+	// Difficulty level (1-5 stars)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Exercise",
+		meta = (ClampMin = "1", ClampMax = "5"))
+	int32 Difficulty;
+
+	// Whether this exercise requires standing up
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Exercise")
+	bool bRequiresStanding;
+
 	FStretchExercise()
 		: DurationSeconds(30)
 		, Repetitions(1)
+		, Difficulty(1)
+		, bRequiresStanding(false)
 	{
 	}
 
-	FStretchExercise(const FString& InName, const FString& InDesc, const FString& InTarget, int32 InDuration)
+	FStretchExercise(const FString& InName, const FString& InDesc, const FString& InTarget,
+		int32 InDuration, int32 InDifficulty = 1, bool bInRequiresStanding = false)
 		: Name(InName)
 		, Description(InDesc)
 		, TargetArea(InTarget)
 		, DurationSeconds(InDuration)
 		, Repetitions(1)
+		, Difficulty(InDifficulty)
+		, bRequiresStanding(bInRequiresStanding)
 	{
 	}
 };
@@ -190,6 +213,11 @@ public:
 	// Randomize exercise selection
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stretch|Config")
 	bool bRandomizeExercises;
+
+	// Maximum reminder events to retain in history
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stretch|Config",
+		meta = (ClampMin = "10", ClampMax = "500"))
+	int32 MaxHistoryEvents;
 
 	// ========================================================================
 	// DELEGATES

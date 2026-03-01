@@ -16,6 +16,7 @@ UStretchReminderScheduler::UStretchReminderScheduler()
 	: ReminderIntervalMinutes(45.0f)
 	, DefaultSnoozeMinutes(5.0f)
 	, bRandomizeExercises(true)
+	, MaxHistoryEvents(100)
 	, bIsActive(false)
 	, bReminderActive(false)
 	, TimeSinceLastReminder(0.0f)
@@ -181,94 +182,140 @@ int32 UStretchReminderScheduler::GetTodayCompletedCount() const
 
 void UStretchReminderScheduler::InitializeExerciseLibrary()
 {
-	// Neck stretches
+	// Neck stretches (seated, low difficulty)
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("Neck Tilt"),
 		TEXT("Slowly tilt your head to the left, hold for 15 seconds, then tilt to the right."),
-		TEXT("Neck"),
-		30
+		TEXT("Neck"), 30, 1, false
 	));
 
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("Neck Rotation"),
 		TEXT("Slowly rotate your head in a circular motion, first clockwise, then counter-clockwise."),
-		TEXT("Neck"),
-		30
+		TEXT("Neck"), 30, 1, false
 	));
 
-	// Shoulder stretches
+	// Shoulder stretches (seated, low difficulty)
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("Shoulder Shrugs"),
 		TEXT("Raise both shoulders up towards your ears, hold for 5 seconds, then release. Repeat 5 times."),
-		TEXT("Shoulders"),
-		30
+		TEXT("Shoulders"), 30, 1, false
 	));
 
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("Shoulder Rolls"),
 		TEXT("Roll your shoulders forward 5 times, then backward 5 times."),
-		TEXT("Shoulders"),
-		30
+		TEXT("Shoulders"), 30, 1, false
 	));
 
-	// Wrist stretches
+	// Wrist stretches (seated, low difficulty - critical for developers)
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("Wrist Extension"),
 		TEXT("Extend your arm, palm up. Use the other hand to gently pull fingers back. Hold 15 seconds each side."),
-		TEXT("Wrists"),
-		30
+		TEXT("Wrists"), 30, 1, false
 	));
 
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("Wrist Circles"),
 		TEXT("Make circles with your wrists, 10 times clockwise, then 10 times counter-clockwise."),
-		TEXT("Wrists"),
-		20
+		TEXT("Wrists"), 20, 1, false
 	));
 
-	// Back stretches
+	// Back stretches (mixed difficulty)
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("Seated Twist"),
 		TEXT("Sit up straight, twist your torso to the left, hold 15 seconds. Repeat on the right."),
-		TEXT("Back"),
-		30
+		TEXT("Back"), 30, 2, false
 	));
 
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("Cat-Cow Stretch"),
 		TEXT("If space allows, get on hands and knees. Arch your back up, then dip it down. Repeat 5 times."),
-		TEXT("Back"),
-		45
+		TEXT("Back"), 45, 3, true
 	));
 
-	// Eye exercises
+	// Eye exercises (seated, lowest difficulty)
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("20-20-20 Rule"),
 		TEXT("Look at something 20 feet away for 20 seconds. This reduces eye strain from screens."),
-		TEXT("Eyes"),
-		20
+		TEXT("Eyes"), 20, 1, false
 	));
 
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("Eye Circles"),
 		TEXT("Without moving your head, roll your eyes in circles. 5 times clockwise, 5 times counter-clockwise."),
-		TEXT("Eyes"),
-		20
+		TEXT("Eyes"), 20, 1, false
 	));
 
-	// Standing stretches
+	// Standing stretches (higher difficulty)
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("Standing Stretch"),
 		TEXT("Stand up, reach your arms overhead, and stretch your whole body. Hold for 10 seconds."),
-		TEXT("Full Body"),
-		15
+		TEXT("Full Body"), 15, 2, true
 	));
 
 	AvailableExercises.Add(FStretchExercise(
 		TEXT("Calf Raises"),
 		TEXT("Stand and raise onto your toes, hold briefly, then lower. Repeat 10 times."),
-		TEXT("Legs"),
-		30
+		TEXT("Legs"), 30, 2, true
+	));
+
+	// === NEW EXERCISES (expanded library) ===
+
+	// Chest and upper body
+	AvailableExercises.Add(FStretchExercise(
+		TEXT("Chest Opener"),
+		TEXT("Clasp your hands behind your back, straighten your arms and lift slightly. Open your chest and hold for 20 seconds."),
+		TEXT("Chest"), 30, 2, false
+	));
+
+	// Hips (seated)
+	AvailableExercises.Add(FStretchExercise(
+		TEXT("Seated Hip Stretch"),
+		TEXT("Cross your right ankle over your left knee. Gently press the right knee down. Hold 15 seconds, then switch."),
+		TEXT("Hips"), 30, 2, false
+	));
+
+	// Hands (seated, critical for devs)
+	AvailableExercises.Add(FStretchExercise(
+		TEXT("Finger Stretches"),
+		TEXT("Spread your fingers wide, hold 5 seconds, then make a fist. Repeat 5 times. Then touch each finger to your thumb."),
+		TEXT("Hands"), 20, 1, false
+	));
+
+	// Neck (seated, posture correction)
+	AvailableExercises.Add(FStretchExercise(
+		TEXT("Chin Tucks"),
+		TEXT("Sit tall, draw your chin straight back (making a double chin). Hold 5 seconds. Repeat 5 times. Combats forward head posture."),
+		TEXT("Neck"), 20, 1, false
+	));
+
+	// Arms (standing)
+	AvailableExercises.Add(FStretchExercise(
+		TEXT("Wall Push-ups"),
+		TEXT("Stand arm's length from a wall. Place palms on wall at shoulder height. Do 10 slow push-ups against the wall."),
+		TEXT("Arms"), 45, 3, true
+	));
+
+	// Legs (standing)
+	AvailableExercises.Add(FStretchExercise(
+		TEXT("Leg Swings"),
+		TEXT("Hold a wall or chair for balance. Swing one leg forward and back 10 times, then switch legs. Keep core engaged."),
+		TEXT("Legs"), 30, 3, true
+	));
+
+	// Breathing (seated, recovery)
+	AvailableExercises.Add(FStretchExercise(
+		TEXT("Deep Breathing"),
+		TEXT("Inhale deeply for 4 seconds, hold for 4, exhale for 6. Repeat 5 times. Activates the parasympathetic nervous system."),
+		TEXT("Full Body"), 60, 1, false
+	));
+
+	// Core (standing, high difficulty)
+	AvailableExercises.Add(FStretchExercise(
+		TEXT("Desk Plank"),
+		TEXT("Place your hands on the edge of your desk, walk your feet back to a plank position. Hold for 20 seconds."),
+		TEXT("Core"), 30, 4, true
 	));
 
 	UE_LOG(LogStretchReminder, Log, TEXT("Initialized %d stretch exercises"), AvailableExercises.Num());
@@ -320,8 +367,8 @@ void UStretchReminderScheduler::RecordReminderEvent(bool bAccepted, bool bSnooze
 
 	ReminderHistory.Add(CurrentReminderEvent);
 
-	// Keep only last 100 events
-	while (ReminderHistory.Num() > 100)
+	// Trim oldest events when history exceeds configured limit
+	while (ReminderHistory.Num() > MaxHistoryEvents)
 	{
 		ReminderHistory.RemoveAt(0);
 	}
