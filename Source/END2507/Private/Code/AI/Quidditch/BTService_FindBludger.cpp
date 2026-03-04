@@ -14,6 +14,7 @@
 // ============================================================================
 
 #include "Code/AI/Quidditch/BTService_FindBludger.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
@@ -226,7 +227,7 @@ TArray<AActor*> UBTService_FindBludger::FindBludgersInPerception(AAIController* 
         {
             bIsBludger = true;
         }
-        else if (Actor->ActorHasTag(TEXT("Bludger")))
+        else if (Actor->ActorHasTag(QuidditchTags::Bludger))
         {
             bIsBludger = true;
         }
@@ -261,7 +262,7 @@ TArray<AActor*> UBTService_FindBludger::FindBludgersInWorld(UWorld* World) const
     {
         for (TActorIterator<AActor> It(World); It; ++It)
         {
-            if (It->ActorHasTag(TEXT("Bludger")))
+            if (It->ActorHasTag(QuidditchTags::Bludger))
             {
                 Bludgers.Add(*It);
             }

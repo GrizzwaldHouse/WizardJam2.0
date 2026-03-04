@@ -15,6 +15,7 @@
 #include "Code/Actors/BaseAgent.h"
 #include "Code/Flight/AC_BroomComponent.h"
 #include "Code/Quidditch/QuidditchStagingZone.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "GenericTeamAgentInterface.h"
 #include "StructuredLoggingMacros.h"
 
@@ -33,20 +34,20 @@ AAIC_QuidditchController::AAIC_QuidditchController()
     , LoseSightRadius(2500.0f)
     , PeripheralVisionAngle(90.0f)
     // Protected: Blackboard key names (TargetLocation -> SelfActor)
-    , TargetLocationKeyName(TEXT("TargetLocation"))
-    , TargetActorKeyName(TEXT("TargetActor"))
-    , IsFlyingKeyName(TEXT("IsFlying"))
-    , SelfActorKeyName(TEXT("SelfActor"))
+    , TargetLocationKeyName(QuidditchBBKeys::TargetLocation)
+    , TargetActorKeyName(QuidditchBBKeys::TargetActor)
+    , IsFlyingKeyName(QuidditchBBKeys::IsFlying)
+    , SelfActorKeyName(QuidditchBBKeys::SelfActor)
     // Protected: Quidditch agent configuration
     , AgentQuidditchTeam(EQuidditchTeam::TeamA)
     , AgentPreferredRole(EQuidditchRole::Seeker)
     // Private: Perceived collectible key
-    , PerceivedCollectibleKeyName(TEXT("PerceivedCollectible"))
+    , PerceivedCollectibleKeyName(QuidditchBBKeys::PerceivedCollectible)
     // Private: Sync key names (MatchStarted -> HasBroom)
-    , MatchStartedKeyName(TEXT("MatchStarted"))
-    , ShouldSwapTeamKeyName(TEXT("ShouldSwapTeam"))
-    , QuidditchRoleKeyName(TEXT("QuidditchRole"))
-    , HasBroomKeyName(TEXT("HasBroom"))
+    , MatchStartedKeyName(QuidditchBBKeys::MatchStarted)
+    , ShouldSwapTeamKeyName(QuidditchBBKeys::ShouldSwapTeam)
+    , QuidditchRoleKeyName(QuidditchBBKeys::QuidditchRole)
+    , HasBroomKeyName(QuidditchBBKeys::HasBroom)
     // Private: Staging zone tracking
     , bNotifiedStagingZoneArrival(false)
 {
@@ -291,7 +292,7 @@ void AAIC_QuidditchController::SetupBlackboard(APawn* InPawn)
             BBComp->SetValueAsObject(SelfActorKeyName, InPawn);
 
             // Initialize HomeLocation to spawn position (for BTTask_ReturnToHome)
-            BBComp->SetValueAsVector(FName("HomeLocation"), InPawn->GetActorLocation());
+            BBComp->SetValueAsVector(QuidditchBBKeys::HomeLocation, InPawn->GetActorLocation());
 
             // Initialize all Bool keys to false (prevents (invalid) markers in debugger)
             BBComp->SetValueAsBool(IsFlyingKeyName, false);
@@ -317,6 +318,7 @@ void AAIC_QuidditchController::SetupBlackboard(APawn* InPawn)
             BBComp->SetValueAsVector(FName("GoalCenter"), FVector::ZeroVector);
 
             // Initialize additional Bool keys
+            BBComp->SetValueAsBool(QuidditchBBKeys::ActionFinished, false);
             BBComp->SetValueAsBool(FName("ReachedStagingZone"), false);
             BBComp->SetValueAsBool(FName("IsReady"), false);
 
@@ -813,14 +815,14 @@ void AAIC_QuidditchController::HandleQuidditchRoleAssigned(APawn* Agent, EQuiddi
     {
         if (AssignedRole == EQuidditchRole::Seeker)
         {
-            ControlledPawn->Tags.AddUnique(TEXT("Seeker"));
+            ControlledPawn->Tags.AddUnique(QuidditchTags::Seeker);
             UE_LOG(LogQuidditchAI, Display, TEXT("[%s] Added 'Seeker' tag (role confirmed)"),
                 *GetName());
         }
         else
         {
             // Remove Seeker tag if role was reassigned from Seeker to something else
-            ControlledPawn->Tags.Remove(TEXT("Seeker"));
+            ControlledPawn->Tags.Remove(QuidditchTags::Seeker);
         }
     }
 }

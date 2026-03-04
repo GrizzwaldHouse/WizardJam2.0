@@ -18,6 +18,7 @@
 
 #include "Code/AI/BTTask_MountBroom.h"
 #include "Code/Flight/AC_BroomComponent.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "AIController.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -124,14 +125,14 @@ EBTNodeResult::Type UBTTask_MountBroom::ExecuteTask(
             else
             {
                 // Fallback: Always write to IsFlying key directly
-                Blackboard->SetValueAsBool(FName("IsFlying"), bIsNowFlying);
+                Blackboard->SetValueAsBool(QuidditchBBKeys::IsFlying, bIsNowFlying);
             }
 
             // CRITICAL FIX: Always write HasBroom = true when mounting succeeds
             // This fixes the silent failure where delegate binding wasn't syncing state
             if (bMountBroom && bIsNowFlying)
             {
-                Blackboard->SetValueAsBool(FName("HasBroom"), true);
+                Blackboard->SetValueAsBool(QuidditchBBKeys::HasBroom, true);
                 UE_LOG(LogTemp, Display,
                     TEXT("[BTTask_MountBroom] '%s' -> BB.IsFlying=%s, BB.HasBroom=true"),
                     *AIPawn->GetName(),

@@ -5,6 +5,7 @@
 
 
 #include "Code/Actors/BTTask_CodeEnemyReload.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Code/Actors/BaseAgent.h"
@@ -19,7 +20,7 @@ UBTTask_CodeEnemyReload::UBTTask_CodeEnemyReload()
 	bNotifyTaskFinished = true;
 
 	// Default blackboard key for task completion message
-	FinishedMessageKey = FName(TEXT("ActionFinished"));
+	FinishedMessageKey = QuidditchBBKeys::ActionFinished;
 }
 EBTNodeResult::Type UBTTask_CodeEnemyReload::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {

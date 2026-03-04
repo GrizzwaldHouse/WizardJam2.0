@@ -2,6 +2,7 @@
 
 
 #include "Code/Actors/BaseAgent.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "Code/AC_HealthComponent.h"
 #include "Code/Utilities/AC_StaminaComponent.h"
 #include "AIController.h"
@@ -211,7 +212,7 @@ void ABaseAgent::HandleActionFinished()
 		return;
 		
 	}
-	BlackboardComp->SetValueAsBool(TEXT("ActionFinished"), true);
+	BlackboardComp->SetValueAsBool(QuidditchBBKeys::ActionFinished, true);
 	UE_LOG(LogCodeAgent, Warning, TEXT("%s: ActionFinished set to TRUE in Blackboard"), *GetName());
 }
 

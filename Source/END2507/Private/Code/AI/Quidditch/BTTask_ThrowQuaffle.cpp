@@ -6,6 +6,7 @@
 // ============================================================================
 
 #include "Code/AI/Quidditch/BTTask_ThrowQuaffle.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
@@ -193,7 +194,7 @@ bool UBTTask_ThrowQuaffle::ExecuteThrow(AActor* Quaffle, APawn* Thrower, const F
     Quaffle->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
     // Remove "Held" tag if present
-    Quaffle->Tags.Remove(TEXT("Held"));
+    Quaffle->Tags.Remove(QuidditchTags::Held);
 
     // Clear owner
     Quaffle->SetOwner(nullptr);

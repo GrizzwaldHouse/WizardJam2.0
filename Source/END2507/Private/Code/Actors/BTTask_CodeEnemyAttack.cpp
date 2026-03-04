@@ -4,13 +4,14 @@
 
 
 #include "Code/Actors/BTTask_CodeEnemyAttack.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
 #include "Code/IEnemyInterface.h"
 #include "../END2507.h"
 DEFINE_LOG_CATEGORY_STATIC(LogAttackTask, Log, All);
 UBTTask_CodeEnemyAttack::UBTTask_CodeEnemyAttack()
-    : ActionFinishedKeyName(TEXT("ActionFinished"))
+    : ActionFinishedKeyName(QuidditchBBKeys::ActionFinished)
 {
 	NodeName = "CodeAttack";
     bNotifyTick = true;
@@ -53,7 +54,7 @@ EBTNodeResult::Type UBTTask_CodeEnemyAttack::ExecuteTask(UBehaviorTreeComponent&
     }
     // Get target actor from blackboard
     UBlackboardComponent* BlackboardComp = OwnerComp.GetBlackboardComponent();
-    AActor* TargetActor = BlackboardComp ? Cast<AActor>(BlackboardComp->GetValueAsObject("Player")) : nullptr;
+    AActor* TargetActor = BlackboardComp ? Cast<AActor>(BlackboardComp->GetValueAsObject(QuidditchBBKeys::Player)) : nullptr;
 
     if (!TargetActor)
     {

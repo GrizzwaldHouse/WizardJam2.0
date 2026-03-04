@@ -6,6 +6,7 @@
 // ============================================================================
 
 #include "Code/AI/Quidditch/BTService_FindSnitch.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
@@ -137,7 +138,7 @@ AActor* UBTService_FindSnitch::FindSnitchInPerception(AAIController* AIControlle
         {
             bIsSnitch = true;
         }
-        else if (Actor->ActorHasTag(TEXT("Snitch")) || Actor->ActorHasTag(TEXT("GoldenSnitch")))
+        else if (Actor->ActorHasTag(QuidditchTags::Snitch) || Actor->ActorHasTag(QuidditchTags::GoldenSnitch))
         {
             bIsSnitch = true;
         }
@@ -175,7 +176,7 @@ AActor* UBTService_FindSnitch::FindSnitchInWorld(UWorld* World) const
     // Fallback: Find by tag
     for (TActorIterator<AActor> It(World); It; ++It)
     {
-        if (It->ActorHasTag(TEXT("Snitch")))
+        if (It->ActorHasTag(QuidditchTags::Snitch))
         {
             return *It;
         }

@@ -12,6 +12,7 @@
 // ============================================================================
 
 #include "Code/Quidditch/SnitchBall.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "Code/AI/AIC_SnitchController.h"
 #include "Code/GameModes/QuidditchGameMode.h"
 #include "Components/SphereComponent.h"
@@ -86,8 +87,8 @@ ASnitchBall::ASnitchBall()
     AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
     // Add Snitch tags for BTService_FindSnitch detection
-    Tags.Add(TEXT("Snitch"));
-    Tags.Add(TEXT("GoldenSnitch"));
+    Tags.Add(QuidditchTags::Snitch);
+    Tags.Add(QuidditchTags::GoldenSnitch);
 }
 
 void ASnitchBall::BeginPlay()
@@ -523,7 +524,7 @@ void ASnitchBall::OnSnitchOverlap(UPrimitiveComponent* OverlappedComponent,
     }
 
     // Only Seekers can catch the Snitch
-    if (!CatchingPawn->ActorHasTag(TEXT("Seeker")))
+    if (!CatchingPawn->ActorHasTag(QuidditchTags::Seeker))
     {
         return;
     }

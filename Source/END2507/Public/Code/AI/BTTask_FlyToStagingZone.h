@@ -37,7 +37,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BehaviorTree/BTTaskNode.h"
+#include "Code/AI/BTTask_FlightBase.h"
 #include "BehaviorTree/BehaviorTreeTypes.h"
 #include "BTTask_FlyToStagingZone.generated.h"
 
@@ -46,7 +46,7 @@ class UAC_FlightSteeringComponent;
 DECLARE_LOG_CATEGORY_EXTERN(LogBTTask_FlyToStagingZone, Log, All);
 
 UCLASS(meta = (DisplayName = "Fly To Staging Zone"))
-class END2507_API UBTTask_FlyToStagingZone : public UBTTaskNode
+class END2507_API UBTTask_FlyToStagingZone : public UBTTask_FlightBase
 {
     GENERATED_BODY()
 

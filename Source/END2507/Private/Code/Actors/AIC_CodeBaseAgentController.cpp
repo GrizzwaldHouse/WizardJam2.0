@@ -17,6 +17,7 @@
 // - BehaviorTreeAsset
 
 #include "Code/Actors/AIC_CodeBaseAgentController.h"
+#include "Code/Quidditch/QuidditchNames.h"
 // Engine includes
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
@@ -48,7 +49,7 @@ AAIC_CodeBaseAgentController::AAIC_CodeBaseAgentController()
     , HearingRange(5000.0f)
     , SightConfig(nullptr)
     , HearingConfig(nullptr)
-    , PlayerKeyName(TEXT("Player"))
+    , PlayerKeyName(QuidditchBBKeys::Player)
     , HasTargetKeyName(TEXT("bHasTarget"))
     , HealthRatioKeyName(TEXT("HealthRatio"))
     , CanAttackKeyName(TEXT("bCanAttack"))

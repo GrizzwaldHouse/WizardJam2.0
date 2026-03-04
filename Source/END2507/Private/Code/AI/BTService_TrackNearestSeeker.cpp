@@ -11,6 +11,7 @@
 // ============================================================================
 
 #include "Code/AI/BTService_TrackNearestSeeker.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
@@ -27,8 +28,8 @@ UBTService_TrackNearestSeeker::UBTService_TrackNearestSeeker()
 	RandomDeviation = 0.05f;
 
 	// Default threat tags - designer can modify in BT editor
-	ValidThreatTags.Add(FName(TEXT("Seeker")));
-	ValidThreatTags.Add(FName(TEXT("Player")));
+	ValidThreatTags.Add(QuidditchTags::Seeker);
+	ValidThreatTags.Add(QuidditchTags::Player);
 
 	// CRITICAL FIX #1: Add object filter so the editor knows what key types are valid
 	// Without this, the key dropdown shows options but IsSet() returns false at runtime

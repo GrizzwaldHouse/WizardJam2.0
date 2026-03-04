@@ -11,12 +11,10 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
 #include "GameFramework/Pawn.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Code/GameModes/QuidditchGameMode.h"
 #include "Code/Flight/AC_BroomComponent.h"
 #include "Code/Flight/AC_FlightSteeringComponent.h"
-#include "Code/Utilities/AC_StaminaComponent.h"
+#include "Code/Quidditch/QuidditchNames.h"
 
 DEFINE_LOG_CATEGORY(LogBTTask_FlyToStagingZone);
 
@@ -91,7 +89,7 @@ EBTNodeResult::Type UBTTask_FlyToStagingZone::ExecuteTask(UBehaviorTreeComponent
     }
 
     // Verify agent is actually flying before attempting flight navigation
-    UAC_BroomComponent* BroomComp = Pawn->FindComponentByClass<UAC_BroomComponent>();
+    UAC_BroomComponent* BroomComp = GetBroomComponent(OwnerComp);
     if (!BroomComp || !BroomComp->IsFlying())
     {
         UE_LOG(LogBTTask_FlyToStagingZone, Warning,
@@ -196,7 +194,7 @@ EBTNodeResult::Type UBTTask_FlyToStagingZone::ExecuteTask(UBehaviorTreeComponent
     // FALLBACK 2: Use HomeLocation from blackboard
     if (CachedStagingLocation.IsZero())
     {
-        CachedStagingLocation = BB->GetValueAsVector(FName("HomeLocation"));
+        CachedStagingLocation = BB->GetValueAsVector(QuidditchBBKeys::HomeLocation);
         if (!CachedStagingLocation.IsZero())
         {
             LocationSource = TEXT("HomeLocation (fallback)");
@@ -221,7 +219,7 @@ EBTNodeResult::Type UBTTask_FlyToStagingZone::ExecuteTask(UBehaviorTreeComponent
         BB->SetValueAsVector(TargetLocationKey.SelectedKeyName, CachedStagingLocation);
     }
     // Also write to StageLocation key for external systems to read
-    BB->SetValueAsVector(FName("StageLocation"), CachedStagingLocation);
+    BB->SetValueAsVector(QuidditchBBKeys::StageLocation, CachedStagingLocation);
 
     // Reset all state
     bLocationSet = true;
@@ -281,11 +279,7 @@ void UBTTask_FlyToStagingZone::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
             TEXT("[%s] TIMEOUT after %.1fs - failed to reach staging zone! Triggering fallback."),
             *Pawn->GetName(), ElapsedFlightTime);
 
-        if (UAC_BroomComponent* BroomComp = Pawn->FindComponentByClass<UAC_BroomComponent>())
-        {
-            BroomComp->SetBoostEnabled(false);
-            BroomComp->SetVerticalInput(0.0f);
-        }
+        StopFlightOutputs(GetBroomComponent(OwnerComp));
 
         FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
         return;
@@ -308,11 +302,7 @@ void UBTTask_FlyToStagingZone::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
                 TEXT("[%s] STUCK DETECTED - agent not making progress, failing to trigger fallback"),
                 *Pawn->GetName());
 
-            if (UAC_BroomComponent* BroomComp = Pawn->FindComponentByClass<UAC_BroomComponent>())
-            {
-                BroomComp->SetBoostEnabled(false);
-                BroomComp->SetVerticalInput(0.0f);
-            }
+            StopFlightOutputs(GetBroomComponent(OwnerComp));
 
             FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
             return;
@@ -326,31 +316,13 @@ void UBTTask_FlyToStagingZone::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
             TEXT("[%s] Arrived at staging zone (%.0f units <= %.0f radius)"),
             *Pawn->GetName(), Distance, ArrivalRadius);
 
-        if (UAC_BroomComponent* BroomComp = Pawn->FindComponentByClass<UAC_BroomComponent>())
-        {
-            BroomComp->SetBoostEnabled(false);
-            BroomComp->SetVerticalInput(0.0f);
-        }
-
-        // Actively stop horizontal movement to prevent drift
-        ACharacter* Character = Cast<ACharacter>(Pawn);
-        if (Character)
-        {
-            UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement();
-            if (MoveComp)
-            {
-                FVector Velocity = MoveComp->Velocity;
-                Velocity.X = 0.0f;
-                Velocity.Y = 0.0f;
-                MoveComp->Velocity = Velocity;
-            }
-        }
+        StopFlightCompletely(Pawn, GetBroomComponent(OwnerComp));
 
         // Set ReachedStagingZone flag for downstream BT nodes
         UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
         if (BB)
         {
-            BB->SetValueAsBool(FName("ReachedStagingZone"), true);
+            BB->SetValueAsBool(QuidditchBBKeys::ReachedStagingZone, true);
         }
 
         FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
@@ -364,29 +336,22 @@ void UBTTask_FlyToStagingZone::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
             TEXT("[%s] OVERSHOOT DETECTED at %.0f units - close enough, marking arrived"),
             *Pawn->GetName(), Distance);
 
-        if (UAC_BroomComponent* BroomComp = Pawn->FindComponentByClass<UAC_BroomComponent>())
-        {
-            BroomComp->SetBoostEnabled(false);
-            BroomComp->SetVerticalInput(0.0f);
-        }
+        StopFlightOutputs(GetBroomComponent(OwnerComp));
 
         // Set ReachedStagingZone flag for downstream BT nodes
         UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
         if (BB)
         {
-            BB->SetValueAsBool(FName("ReachedStagingZone"), true);
+            BB->SetValueAsBool(QuidditchBBKeys::ReachedStagingZone, true);
         }
 
         FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
         return;
     }
 
-    // Get broom component for flight control
-    UAC_BroomComponent* BroomComp = Pawn->FindComponentByClass<UAC_BroomComponent>();
-
-    // Get stamina for stamina-aware boost decision
-    UAC_StaminaComponent* StaminaComp = Pawn->FindComponentByClass<UAC_StaminaComponent>();
-    float CurrentStaminaPercent = StaminaComp ? StaminaComp->GetStaminaPercent() : 1.0f;
+    // Get broom component and stamina for flight control
+    UAC_BroomComponent* BroomComp = GetBroomComponent(OwnerComp);
+    float CurrentStaminaPercent = FMath::Max(GetStaminaPercent(Pawn), 0.0f);
 
     // Solution 1: Use FlightSteeringComponent if available
     if (bUseFlightSteering && CachedSteeringComponent.IsValid())
@@ -395,73 +360,29 @@ void UBTTask_FlyToStagingZone::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
 
         if (BroomComp)
         {
-            // Boost with hysteresis to prevent oscillation:
-            // - Turn ON when distance > BoostDistanceThreshold (500) AND stamina >= 30%
-            // - Turn OFF when distance < BoostDisableThreshold (300) OR stamina < 30%
-            bool bShouldBoost = bCurrentlyBoosting;
-            if (!bCurrentlyBoosting)
+            if (bUseBoostWhenFar)
             {
-                // Currently not boosting - check if we should turn ON
-                bShouldBoost = bUseBoostWhenFar
-                    && (Distance > BoostDistanceThreshold)
-                    && (CurrentStaminaPercent >= MinStaminaForBoost);
+                UpdateBoostWithHysteresis(BroomComp, Distance, BoostDistanceThreshold,
+                    BoostDisableThreshold, CurrentStaminaPercent, MinStaminaForBoost, bCurrentlyBoosting);
             }
-            else
-            {
-                // Currently boosting - check if we should turn OFF
-                bShouldBoost = bUseBoostWhenFar
-                    && (Distance > BoostDisableThreshold)
-                    && (CurrentStaminaPercent >= MinStaminaForBoost);
-            }
-            bCurrentlyBoosting = bShouldBoost;
-            BroomComp->SetBoostEnabled(bShouldBoost);
 
-            // Apply steering output (Pitch, Yaw, Thrust mapped from steering component)
-            BroomComp->SetVerticalInput(SteeringInput.X);  // Pitch controls altitude
+            BroomComp->SetVerticalInput(SteeringInput.X);
 
             // Use steering output for movement direction
-            // Direct velocity control for AI pawns - AddMovementInput requires PlayerController processing
             FVector SteeringDirection = Pawn->GetActorForwardVector() * SteeringInput.Z;
             SteeringDirection += Pawn->GetActorRightVector() * SteeringInput.Y * 0.5f;
             SteeringDirection = SteeringDirection.GetSafeNormal();
 
-            ACharacter* Character = Cast<ACharacter>(Pawn);
-            if (Character)
+            // Slow down near target to prevent overshooting
+            float SpeedMult = FlightSpeedMultiplier;
+            float SlowdownRadius = ArrivalRadius * 2.0f;
+            if (Distance < SlowdownRadius)
             {
-                UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement();
-                if (MoveComp && MoveComp->MovementMode == MOVE_Flying)
-                {
-                    float TargetSpeed = MoveComp->MaxFlySpeed * FlightSpeedMultiplier;
-
-                    // Slow down as we approach the target to prevent overshooting
-                    float SlowdownRadius = ArrivalRadius * 2.0f;
-                    if (Distance < SlowdownRadius)
-                    {
-                        float SlowdownFactor = Distance / SlowdownRadius;
-                        TargetSpeed *= FMath::Max(SlowdownFactor, 0.2f);
-                    }
-
-                    // Set velocity directly in target direction - no interpolation
-                    // VInterpTo causes circular orbits when direction changes rapidly at high speed
-                    FVector DesiredVelocity = SteeringDirection * TargetSpeed;
-
-                    // Preserve vertical velocity managed by BroomComponent
-                    DesiredVelocity.Z = MoveComp->Velocity.Z;
-
-                    // Direct velocity assignment for AI - instant direction change
-                    MoveComp->Velocity = DesiredVelocity;
-                }
+                SpeedMult *= FMath::Max(Distance / SlowdownRadius, 0.2f);
             }
 
-            // Rotate toward movement direction
-            FVector MoveDir = (CachedStagingLocation - CurrentLocation).GetSafeNormal();
-            if (!MoveDir.IsNearlyZero())
-            {
-                FRotator TargetRotation = MoveDir.Rotation();
-                FRotator CurrentRotation = Pawn->GetActorRotation();
-                FRotator NewRotation = FMath::RInterpTo(CurrentRotation, TargetRotation, DeltaSeconds, 5.0f);
-                Pawn->SetActorRotation(NewRotation);
-            }
+            ApplyFlightVelocity(Pawn, SteeringDirection, SpeedMult);
+            ApplyFlightRotation(Pawn, CachedStagingLocation, DeltaSeconds);
         }
     }
     else
@@ -469,71 +390,30 @@ void UBTTask_FlyToStagingZone::TickTask(UBehaviorTreeComponent& OwnerComp, uint8
         // Fallback: Direct flight without obstacle avoidance
         if (BroomComp)
         {
-            // Boost with hysteresis to prevent oscillation:
-            // - Turn ON when distance > BoostDistanceThreshold (500) AND stamina >= 30%
-            // - Turn OFF when distance < BoostDisableThreshold (300) OR stamina < 30%
-            bool bShouldBoost = bCurrentlyBoosting;
-            if (!bCurrentlyBoosting)
+            if (bUseBoostWhenFar)
             {
-                // Currently not boosting - check if we should turn ON
-                bShouldBoost = bUseBoostWhenFar
-                    && (Distance > BoostDistanceThreshold)
-                    && (CurrentStaminaPercent >= MinStaminaForBoost);
+                UpdateBoostWithHysteresis(BroomComp, Distance, BoostDistanceThreshold,
+                    BoostDisableThreshold, CurrentStaminaPercent, MinStaminaForBoost, bCurrentlyBoosting);
             }
-            else
-            {
-                // Currently boosting - check if we should turn OFF
-                bShouldBoost = bUseBoostWhenFar
-                    && (Distance > BoostDisableThreshold)
-                    && (CurrentStaminaPercent >= MinStaminaForBoost);
-            }
-            bCurrentlyBoosting = bShouldBoost;
-            BroomComp->SetBoostEnabled(bShouldBoost);
 
             float AltitudeDiff = CachedStagingLocation.Z - CurrentLocation.Z;
             float VerticalInput = FMath::Clamp(AltitudeDiff / AltitudeScale, -1.0f, 1.0f);
             BroomComp->SetVerticalInput(VerticalInput);
         }
 
-        // Use horizontal direction only - SetVerticalInput handles altitude separately
-        // Direct velocity control for AI pawns - AddMovementInput requires PlayerController processing
+        // Horizontal direction only - SetVerticalInput handles altitude separately
         FVector Direction = FVector(ToTarget.X, ToTarget.Y, 0.0f).GetSafeNormal();
 
-        ACharacter* Character = Cast<ACharacter>(Pawn);
-        if (Character)
+        // Slow down near target to prevent overshooting
+        float SpeedMult = FlightSpeedMultiplier;
+        float SlowdownRadius = ArrivalRadius * 2.0f;
+        if (Distance < SlowdownRadius)
         {
-            UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement();
-            if (MoveComp && MoveComp->MovementMode == MOVE_Flying)
-            {
-                float TargetSpeed = MoveComp->MaxFlySpeed * FlightSpeedMultiplier;
-
-                // Slow down as we approach the target to prevent overshooting
-                float SlowdownRadius = ArrivalRadius * 2.0f;
-                if (Distance < SlowdownRadius)
-                {
-                    float SlowdownFactor = Distance / SlowdownRadius;
-                    TargetSpeed *= FMath::Max(SlowdownFactor, 0.2f);
-                }
-
-                // Set velocity directly in target direction - no interpolation
-                // VInterpTo causes circular orbits when direction changes rapidly at high speed
-                FVector DesiredVelocity = Direction * TargetSpeed;
-
-                // Preserve vertical velocity managed by BroomComponent
-                DesiredVelocity.Z = MoveComp->Velocity.Z;
-
-                // Direct velocity assignment for AI - instant direction change
-                MoveComp->Velocity = DesiredVelocity;
-            }
+            SpeedMult *= FMath::Max(Distance / SlowdownRadius, 0.2f);
         }
 
-        if (!Direction.IsNearlyZero())
-        {
-            FRotator TargetRotation = Direction.Rotation();
-            FRotator CurrentRotation = Pawn->GetActorRotation();
-            FRotator NewRotation = FMath::RInterpTo(CurrentRotation, TargetRotation, DeltaSeconds, 5.0f);
-            Pawn->SetActorRotation(NewRotation);
-        }
+        ApplyFlightVelocity(Pawn, Direction, SpeedMult);
+        ApplyFlightRotation(Pawn, CachedStagingLocation, DeltaSeconds);
     }
 }
 
@@ -549,16 +429,7 @@ void UBTTask_FlyToStagingZone::OnTaskFinished(UBehaviorTreeComponent& OwnerComp,
     bCurrentlyBoosting = false;
 
     // Stop boost if we have pawn access
-    if (AAIController* AIController = OwnerComp.GetAIOwner())
-    {
-        if (APawn* Pawn = AIController->GetPawn())
-        {
-            if (UAC_BroomComponent* BroomComp = Pawn->FindComponentByClass<UAC_BroomComponent>())
-            {
-                BroomComp->SetBoostEnabled(false);
-            }
-        }
-    }
+    StopFlightOutputs(GetBroomComponent(OwnerComp));
 }
 
 FString UBTTask_FlyToStagingZone::GetStaticDescription() const

@@ -10,6 +10,7 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISense_Sight.h"
 #include "GameFramework/Pawn.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "StructuredLoggingMacros.h"
 
 DEFINE_LOG_CATEGORY(LogSnitchController);
@@ -27,9 +28,9 @@ AAIC_SnitchController::AAIC_SnitchController()
 	SetGenericTeamId(FGenericTeamId::NoTeam);
 
 	// Initialize default pursuer tags (designer can modify in editor)
-	ValidPursuerTags.Add(FName(TEXT("Seeker")));
-	ValidPursuerTags.Add(FName(TEXT("Flying")));
-	ValidPursuerTags.Add(FName(TEXT("Player")));
+	ValidPursuerTags.Add(QuidditchTags::Seeker);
+	ValidPursuerTags.Add(QuidditchTags::Flying);
+	ValidPursuerTags.Add(QuidditchTags::Player);
 }
 
 void AAIC_SnitchController::BeginPlay()

@@ -10,6 +10,7 @@
 #include "Code/AI/BTTask_ForceMount.h"
 #include "Code/Flight/BroomActor.h"
 #include "Code/Flight/AC_BroomComponent.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Engine/World.h"
@@ -92,7 +93,7 @@ EBTNodeResult::Type UBTTask_ForceMount::ExecuteTask(
         UBlackboardComponent* Blackboard = OwnerComp.GetBlackboardComponent();
         if (Blackboard)
         {
-            Blackboard->SetValueAsBool(TEXT("IsFlying"), true);
+            Blackboard->SetValueAsBool(QuidditchBBKeys::IsFlying, true);
         }
 
         return EBTNodeResult::Succeeded;

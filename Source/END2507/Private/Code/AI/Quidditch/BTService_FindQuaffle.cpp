@@ -6,6 +6,7 @@
 // ============================================================================
 
 #include "Code/AI/Quidditch/BTService_FindQuaffle.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
@@ -176,7 +177,7 @@ AActor* UBTService_FindQuaffle::FindQuaffleInPerception(AAIController* AIControl
         {
             bIsQuaffle = true;
         }
-        else if (Actor->ActorHasTag(TEXT("Quaffle")))
+        else if (Actor->ActorHasTag(QuidditchTags::Quaffle))
         {
             bIsQuaffle = true;
         }
@@ -214,7 +215,7 @@ AActor* UBTService_FindQuaffle::FindQuaffleInWorld(UWorld* World) const
     // Find by tag
     for (TActorIterator<AActor> It(World); It; ++It)
     {
-        if (It->ActorHasTag(TEXT("Quaffle")))
+        if (It->ActorHasTag(QuidditchTags::Quaffle))
         {
             return *It;
         }
@@ -239,7 +240,7 @@ bool UBTService_FindQuaffle::IsQuaffleHeld(AActor* Quaffle, AActor*& OutHolder) 
     }
 
     // Alternative: Check for "Held" tag
-    if (Quaffle->ActorHasTag(TEXT("Held")))
+    if (Quaffle->ActorHasTag(QuidditchTags::Held))
     {
         // Try to get holder from Quaffle's owner
         OutHolder = Quaffle->GetOwner();

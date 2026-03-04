@@ -2,12 +2,13 @@
 
 
 #include "Code/Actors/BTTask_EnemyFlee.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Vector.h"
 #include "GameFramework/Character.h"
 #include "NavigationSystem.h"
-#include "EngineUtils.h" 
+#include "EngineUtils.h"
 #include "Code/Actors/HideWall.h"
 #include "../END2507.h"
 
@@ -84,7 +85,7 @@ EBTNodeResult::Type UBTTask_EnemyFlee::ExecuteTask(UBehaviorTreeComponent& Owner
     }
 
     // No safe cover found, let's use  fallback
-    AActor* PlayerActor = Cast<AActor>(BlackboardComp->GetValueAsObject(TEXT("Player")));
+    AActor* PlayerActor = Cast<AActor>(BlackboardComp->GetValueAsObject(QuidditchBBKeys::Player));
     if (!PlayerActor)
     {
         UE_LOG(LogFleeBehavior, Warning, TEXT("No player target to flee from and no cover!"));

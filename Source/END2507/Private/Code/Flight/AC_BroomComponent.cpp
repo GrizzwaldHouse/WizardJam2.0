@@ -383,11 +383,19 @@ void UAC_BroomComponent::SpawnBroomVisual()
         return;
     }
 
-    ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
+    // Use cached MovementComponent to verify Character owner (cached in BeginPlay)
+    if (!MovementComponent)
+    {
+        UE_LOG(LogBroomComponent, Error,
+            TEXT("  ? Cannot spawn broom - No cached MovementComponent (owner not ACharacter?)"));
+        return;
+    }
+
+    ACharacter* OwnerChar = MovementComponent->GetCharacterOwner();
     if (!OwnerChar)
     {
         UE_LOG(LogBroomComponent, Error,
-            TEXT("  ? Cannot spawn broom - Owner is not ACharacter!"));
+            TEXT("  ? Cannot spawn broom - MovementComponent has no Character owner!"));
         return;
     }
 

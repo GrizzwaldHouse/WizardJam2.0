@@ -11,6 +11,7 @@
 
 #include "Code/AI/Quidditch/BTService_FindStagingZone.h"
 #include "Code/Quidditch/QuidditchStagingZone.h"
+#include "Code/Quidditch/QuidditchNames.h"
 #include "Code/GameModes/QuidditchGameMode.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -139,7 +140,7 @@ AQuidditchStagingZone* UBTService_FindStagingZone::FindStagingZoneInPerception(A
         }
 
         // Check if actor is a staging zone (by tag - the flower broadcasts this)
-        if (!Actor->ActorHasTag(TEXT("StagingZone")) && !Actor->ActorHasTag(TEXT("LandingZone")))
+        if (!Actor->ActorHasTag(QuidditchTags::StagingZone) && !Actor->ActorHasTag(QuidditchTags::LandingZone))
         {
             continue;
         }

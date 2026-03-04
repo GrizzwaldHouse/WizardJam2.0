@@ -35,12 +35,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BehaviorTree/BTTaskNode.h"
+#include "Code/AI/BTTask_FlightBase.h"
 #include "BehaviorTree/BehaviorTreeTypes.h"
 #include "BTTask_ControlFlight.generated.h"
 
 UCLASS(meta = (DisplayName = "Control Flight"))
-class END2507_API UBTTask_ControlFlight : public UBTTaskNode
+class END2507_API UBTTask_ControlFlight : public UBTTask_FlightBase
 {
     GENERATED_BODY()
 
@@ -150,8 +150,4 @@ protected:
 private:
     // Helper to get target location from blackboard
     bool GetTargetLocation(UBehaviorTreeComponent& OwnerComp, FVector& OutLocation) const;
-
-    // Helper to get stamina percentage from pawn's AC_StaminaComponent
-    // Returns -1.0f if component not found (error case)
-    float GetStaminaPercentage(APawn* Pawn) const;
 };
