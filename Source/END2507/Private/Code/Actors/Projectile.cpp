@@ -21,8 +21,8 @@ AProjectile::AProjectile() :
 	Size(0.18f, 0.18f, 0.18f)
 , Damage(10.0f)
 , ProjectileColor(FLinearColor::Blue)
-, SpellElement(NAME_None)
 , CombatFaction(ECombatFaction::Unknown)
+, SpellElement(NAME_None)
 , OwnerPawn(nullptr)
 , bMaterialInitialized(false)
 {

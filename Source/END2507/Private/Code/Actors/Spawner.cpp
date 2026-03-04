@@ -16,14 +16,14 @@
 DEFINE_LOG_CATEGORY_STATIC(LogSpawner, Log, All);
 
 // Sets default values
-ASpawner::ASpawner() : MaxSpawnCount(3)
-, bInfiniteSpawn(false)
+ASpawner::ASpawner() : bInfiniteSpawn(false)
 , SpawnInterval(10.0f)
 , SpawnRadius(200.0f)
-, FactionColor(FLinearColor::Red)
-, TeamID(1)
+, MaxSpawnCount(3)
 , SpawnOffset(FVector(200.0f, 0.0f, 0.0f))
 , FlashDuration(0.3f)
+, FactionColor(FLinearColor::Red)
+, TeamID(1)
 , SpawnedAgentCount(0)
 , LastHitColorIndex(-1)
 {
