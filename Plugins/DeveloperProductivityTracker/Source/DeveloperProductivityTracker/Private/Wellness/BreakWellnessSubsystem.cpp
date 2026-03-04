@@ -14,7 +14,9 @@
 DEFINE_LOG_CATEGORY(LogWellness);
 
 UBreakWellnessSubsystem::UBreakWellnessSubsystem()
-	: bIsEnabled(true)
+	: MinutesBeforeBreakSuggestion(45.0f)
+	, MinutesBeforeOverworkedWarning(90.0f)
+	, bIsEnabled(true)
 	, CurrentWellnessStatus(EWellnessStatus::Good)
 	, PreviousWellnessStatus(EWellnessStatus::Good)
 	, SecondsSinceLastBreak(0.0f)
@@ -26,8 +28,6 @@ UBreakWellnessSubsystem::UBreakWellnessSubsystem()
 	, HabitStreakTracker(nullptr)
 	, HttpServer(nullptr)
 	, ExercisePopupManager(nullptr)
-	, MinutesBeforeBreakSuggestion(45.0f)
-	, MinutesBeforeOverworkedWarning(90.0f)
 	, TodayWorkSeconds(0.0f)
 	, TodayBreakSeconds(0.0f)
 {

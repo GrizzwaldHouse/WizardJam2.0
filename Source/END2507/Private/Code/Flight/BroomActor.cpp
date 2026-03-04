@@ -26,13 +26,13 @@ DEFINE_LOG_CATEGORY(LogBroomActor)
 // ============================================================================
 
 ABroomActor::ABroomActor()
-    : InteractionRange(200.0f)
-    , LockedPromptText(FText::FromString(TEXT("Requires broom unlock")))
+    : bAutoRegisterForSight(true)
+    , InteractionRange(200.0f)
     , MountPromptText(FText::FromString(TEXT("Press E to mount")))
+    , LockedPromptText(FText::FromString(TEXT("Requires broom unlock")))
     , InUseText(FText::FromString(TEXT("Broom in use")))
     , CurrentRider(nullptr)
     , RiderBroomComponent(nullptr)
-    , bAutoRegisterForSight(true)
 {
     PrimaryActorTick.bCanEverTick = false;
 

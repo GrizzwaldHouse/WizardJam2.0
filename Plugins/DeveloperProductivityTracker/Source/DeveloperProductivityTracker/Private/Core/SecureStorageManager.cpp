@@ -527,10 +527,10 @@ FString USecureStorageManager::GetInstallationSalt()
 FString USecureStorageManager::GenerateMachineIdentifier()
 {
 	// Combine multiple system identifiers for uniqueness
-	FString MacAddress = FPlatformMisc::GetMacAddressString();
+	FString DeviceId = FPlatformMisc::GetDeviceId();
 	FString LoginId = FPlatformMisc::GetLoginId();
 
-	FString Combined = FString::Printf(TEXT("%s|%s"), *MacAddress, *LoginId);
+	FString Combined = FString::Printf(TEXT("%s|%s"), *DeviceId, *LoginId);
 	return FMD5::HashAnsiString(*Combined);
 }
 

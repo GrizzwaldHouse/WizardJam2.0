@@ -17,9 +17,9 @@ DEFINE_LOG_CATEGORY_STATIC(LogCodeGameMode, Log, All);
 
 
 ACodeGameModeBase::ACodeGameModeBase()
-	: EnemyCount(0)
-	, ResultsWidgetInstance(nullptr)
+	: ResultsWidgetInstance(nullptr)
 	, CurrentPlayer(nullptr)
+	, EnemyCount(0)
 {
 	PrimaryActorTick.bCanEverTick = false;
 

@@ -23,7 +23,10 @@ DEFINE_LOG_CATEGORY(LogFlockSteering);
 
 UFlyingSteeringComponent::UFlyingSteeringComponent()
     // Initialize with Flock.cs default values
-    : AlignmentStrength(5.0f)       // Flock.cs Line 23
+    : bEnableAlignment(true)
+    , bEnableCohesion(true)
+    , bEnableSeparation(true)
+    , AlignmentStrength(5.0f)       // Flock.cs Line 23
     , CohesionStrength(5.0f)        // Flock.cs Line 24
     , SeparationStrength(5.0f)      // Flock.cs Line 25
     , FlockRadius(500.0f)           // Flock.cs Line 26 (50.0f * 10 for UE scale)
@@ -34,9 +37,6 @@ UFlyingSteeringComponent::UFlyingSteeringComponent()
     , AverageVelocity(FVector::ZeroVector)   // Flock.cs Line 30
     , TargetLocation(FVector::ZeroVector)
     , bHasTarget(false)
-    , bEnableAlignment(true)
-    , bEnableCohesion(true)
-    , bEnableSeparation(true)
 {
     PrimaryComponentTick.bCanEverTick = true;
 }
